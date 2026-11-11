@@ -1,0 +1,67 @@
+[project]
+name = "agent-mail-exchange"
+version = "0.3.0"
+description = "Agent Mail Exchange functionality prototype"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.13"
+dependencies = [
+  "aiosmtpd>=1.4.6,<2",
+  "dkimpy>=1.1.8,<2",
+  "dnspython>=2.7,<3",
+  "jsonschema>=4.23,<5",
+  "mcp>=1.12,<2",
+  "pyyaml>=6.0.2,<7",
+  "typer>=0.15,<1",
+]
+
+[project.optional-dependencies]
+# Compatibility alias: MCP now ships with the default client install.
+mcp = ["mcp>=1.12,<2"]
+
+[dependency-groups]
+# Source-only: uv applies the patched vendor source; never publish a PyPI extra.
+gateway = ["pymilter>=1.0.5,<2"]
+dev = [
+  "pytest>=9.0.3,<10",
+  "ruff>=0.12,<1",
+]
+
+[project.scripts]
+amx = "amx.cli:main"
+amx-gateway = "amx.gateway:main"
+amx-mcp = "amx.mcp_server:main"
+amx-runner = "amx.runner:main"
+
+[tool.uv.sources]
+# pymilter 1.0.5 with a thread-state fix for libmilter's worker pool (third_party/pymilter/AMX.md).
+pymilter = { path = "third_party/pymilter" }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/amx"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"spec/schemas" = "amx/schemas"
+
+[tool.pytest.ini_options]
+filterwarnings = [
+  "ignore:Requiring AUTH while not requiring TLS can lead to security vulnerabilities!:UserWarning",
+]
+markers = [
+  "ax_binary: optional AX attach proof with AX_BINARY and a temporary AX_HOME",
+  "integration: requires the local Docker Compose mail stack",
+  "llm: S11, also requires the host's Ollama (skipped when it does not answer)",
+]
+testpaths = ["tests", "scenarios"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+extend-exclude = ["third_party"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]

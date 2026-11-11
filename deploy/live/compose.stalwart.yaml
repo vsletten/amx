@@ -1,0 +1,93 @@
+# SH-10 live overlay. Requires Compose >=2.24.4; deploy/live/compose.yaml is unchanged.
+# Init/sync contain upstream SEL code and MUST remain local-only builds.
+x-provisioner: &provisioner
+  build:
+    context: ../..
+    dockerfile: deploy/stalwart/Dockerfile
+    target: provisioner
+  user: "${AMX_UID:?}:${AMX_GID:?}"
+  environment:
+    TOKIO_WORKER_THREADS: "8"
+    RAYON_NUM_THREADS: "8"
+
+services:
+  stalwart-init:
+    <<: *provisioner
+    network_mode: none
+    command: ["--bundle=/secrets/bundle.json", "--admin-file=/secrets/recovery-admin", "--reapply"]
+    volumes:
+      - ${SECRETS_DIR:?}/stalwart:/secrets:ro
+      - ${SECRETS_DIR:?}/stalwart/config.json:/etc/stalwart/config.json:ro
+      - ${SECRETS_DIR:?}/tls:/tls:ro
+      - ${STALWART_DIR:?}:/var/lib/stalwart
+
+  mailhost:
+    image: stalwartlabs/stalwart:v0.16.25@sha256:74e5a7d55303ba525d939c6bf97ed4e010df7521f52d80afc22a815b66bd53f3
+    build: !reset null
+    user: "${AMX_UID:?}:${AMX_GID:?}"
+    environment: !override
+      STALWART_HOSTNAME: ${MX_HOST:?}
+      TOKIO_WORKER_THREADS: "8"
+      RAYON_NUM_THREADS: "8"
+    entrypoint: ["bash", "-c"]
+    ports:
+      - "${BIND_ADDRESS:?}:${PEOPLE_SUBMISSION_PORT:?}:465"
+      - "${ADMIN_BIND_ADDRESS:?}:${DISCOVERY_PORT:?}:443"
+    command:
+      - 'export STALWART_RECOVERY_ADMIN="$$(cat /secrets/recovery-admin)"; exec /usr/local/bin/stalwart --config /etc/stalwart/config.json'
+    volumes: !override
+      - ${SECRETS_DIR:?}/stalwart:/secrets:ro
+      - ${SECRETS_DIR:?}/stalwart/config.json:/etc/stalwart/config.json:ro
+      - ${SECRETS_DIR:?}/tls:/tls:ro
+      - ${STALWART_DIR:?}:/var/lib/stalwart
+    depends_on:
+      stalwart-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/25 && exec 4<>/dev/tcp/127.0.0.1/993"]
+
+  stalwart-sync:
+    <<: *provisioner
+    entrypoint: ["python", "/opt/amx/stalwart.py", "sync"]
+    command:
+      - --bundle=/secrets/bundle.json
+      - --admin-file=/secrets/recovery-admin
+      - --accounts=/accounts/agents.passwd
+      - --people=/secrets/people.json
+      - --url=http://mailhost:8080
+      - --imap-host=${MAILHOST_IP:?}
+      - --imap-port=993
+      - --imap-tls
+      - --imap-ca-file=/tls/ca.pem
+      - --watch
+    restart: unless-stopped
+    depends_on:
+      mailhost:
+        condition: service_healthy
+    volumes:
+      - ${SECRETS_DIR:?}/stalwart:/secrets:ro
+      - ${SECRETS_DIR:?}/mailhost/accounts:/accounts:ro
+      - ${SECRETS_DIR:?}/tls:/tls:ro
+    networks:
+      live: {}
+
+  webmail:
+    image: roundcube/roundcubemail:1.6.11-apache
+    profiles: ["webmail"]
+    restart: unless-stopped
+    depends_on:
+      mailhost:
+        condition: service_healthy
+    environment:
+      ROUNDCUBEMAIL_DEFAULT_HOST: mailhost
+      ROUNDCUBEMAIL_DEFAULT_PORT: "143"
+      ROUNDCUBEMAIL_SMTP_SERVER: mailhost
+      ROUNDCUBEMAIL_SMTP_PORT: "587"
+      AMX_MX_HOST: ${MX_HOST:?}
+    ports:
+      - "${BIND_ADDRESS:?}:${WEBMAIL_PORT:?}:80"
+    volumes:
+      - ./roundcube/config.inc.php:/var/roundcube/config/amx.inc.php:ro
+      - ${SECRETS_DIR:?}/tls:/tls:ro
+    networks:
+      live: {}

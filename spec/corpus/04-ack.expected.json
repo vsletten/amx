@@ -1,0 +1,31 @@
+{
+  "result": {
+    "card": null,
+    "idempotency_key": null,
+    "intent": "ack",
+    "lane": "agent",
+    "payload": {
+      "@context": "https://schema.org",
+      "received": true
+    },
+    "protocol": "amx/0.1",
+    "reply_by": null,
+    "report": null,
+    "schema": "https://evtmail.ai/schema/0.1/ack.json",
+    "sender": {
+      "address": "scheduler@agents.northwind.test",
+      "display_name": null,
+      "dkim_domain": null,
+      "dkim_selector": null
+    },
+    "task": "t_04_ack",
+    "task_state": "working",
+    "text": "Request received.\n",
+    "thread": {
+      "in_reply_to": null,
+      "message_id": "<04-ack@agents.northwind.test>",
+      "references": []
+    },
+    "trust": null
+  }
+}

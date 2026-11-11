@@ -1,0 +1,32 @@
+{
+  "result": {
+    "card": null,
+    "idempotency_key": null,
+    "intent": "ack",
+    "lane": "system",
+    "payload": null,
+    "protocol": null,
+    "reply_by": null,
+    "report": {
+      "disposition": "manual-action/MDN-sent-manually; displayed",
+      "original_message_id": "<request@agents.northwind.test>",
+      "recipient": "pat@plainmail.test"
+    },
+    "schema": null,
+    "sender": {
+      "address": "pat@plainmail.test",
+      "display_name": null,
+      "dkim_domain": null,
+      "dkim_selector": null
+    },
+    "task": "t_mdn",
+    "task_state": null,
+    "text": "Displayed.",
+    "thread": {
+      "in_reply_to": null,
+      "message_id": "<mdn@plainmail.test>",
+      "references": []
+    },
+    "trust": null
+  }
+}

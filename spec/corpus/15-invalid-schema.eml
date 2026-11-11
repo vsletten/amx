@@ -1,0 +1,28 @@
+From: scheduler@agents.northwind.test
+To: intake@agents.contoso.test
+Subject: Temporary Invalid Source
+Date: Wed, 23 Sep 2026 19:00:00 +0000
+Message-ID: <temporary-invalid-source@agents.northwind.test>
+Auto-Submitted: auto-generated
+Agent-Protocol: amx/0.1
+Agent-Intent: request
+Agent-Task: t_temporary_invalid_source
+Agent-Task-State: submitted
+Agent-Schema: https://evtmail.ai/schema/0.1/request.json
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="amx-temporary-invalid-source"
+
+--amx-temporary-invalid-source
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Invalid request payload follows.
+
+--amx-temporary-invalid-source
+MIME-Version: 1.0
+Content-Type: application/ld+json
+Content-Transfer-Encoding: 8bit
+Content-Purpose: Machine-readable
+
+{"@context":"https://schema.org","not-action":true}
+--amx-temporary-invalid-source--

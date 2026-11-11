@@ -1,0 +1,104 @@
+domain: northwind.test
+agent_domain: agents.northwind.test
+data_dir: /data
+listeners: {milter_host: 0.0.0.0, milter_port: 8890, lmtp_host: 0.0.0.0, lmtp_port: 2424, submission_host: 0.0.0.0, submission_port: 2587}
+dns_server: 172.30.0.53
+postfix_host: mailhost-nw
+postfix_port: 10025
+sibling_port: 10027
+keys_dir: /keys
+# PLAN §5.2: what `amx agent add --live` and `amx trust add` write; the gateway reloads it without
+# a restart. From the host, pass --registry-dir deploy/generated/state/nw/registry and
+# --keys-dir deploy/generated/keys. The accounts file is the mailhost's (relative to this file,
+# so it resolves on the host, where the commands run).
+registry_dir: /data/registry
+accounts_file: ../generated/state/accounts/nw/agents.passwd
+submission_tls_cert: /tls/server.pem
+submission_tls_key: /tls/server-key.pem
+submission_tls_ca: /tls/dev-ca.pem
+mailbox: {host: mailhost-nw, port: 143, master_user: gateway, master_password: dev-gateway}
+# PLAN §5.10: an agent declares its own state (pause, resume, capacity) by mailing this
+# address through submission. The milter refuses it from outside, and every declaration
+# lapses within max_ttl_seconds.
+control: {address: control, max_ttl_seconds: 3600}
+agents:
+  scheduler:
+    handler: amx.examples.echo:handle
+    mode: sync
+    watermark: 2
+    workers: 1
+    enabled: true
+    submit_token: dev-scheduler-token
+  restricted:
+    handler: amx.examples.echo:handle
+    mode: sync
+    watermark: 2
+    workers: 1
+    enabled: true
+    submit_token: dev-restricted-token
+  planner:             # S11a: an LLM agent (amx.examples.llm_agent; brief in llm-briefs.yaml)
+    handler: amx.examples.llm_agent:handle
+    mode: queued
+    watermark: 4
+    workers: 1
+    submit_token: dev-planner-token
+trust:
+  - d: agents.northwind.test
+    s: scheduler
+    intents: [request, response, update, ack, error]
+    schemas: ["*"]
+    can_open_tasks: true
+  - d: agents.northwind.test
+    s: restricted
+    intents: [response]
+    schemas: ["*"]
+    can_open_tasks: false
+  - d: agents.northwind.test
+    s: planner
+    intents: [request, response, update, ack, error]
+    schemas: ["*"]
+    can_open_tasks: true
+  - d: agents.contoso.test
+    s: intake
+    intents: [request, response, update, ack, error]
+    schemas: ["*"]
+    can_open_tasks: true
+  - d: agents.contoso.test
+    s: inspections
+    intents: [request, response, update, ack, error]
+    schemas: ["*"]
+    can_open_tasks: true
+  - d: agents.contoso.test
+    s: outpost
+    intents: [request, response, update, ack, error]
+    schemas: ["*"]
+    can_open_tasks: true
+  - d: "*"
+    s: "*"
+    lane: human
+    intents: [request, response]
+    schemas: ["*"]
+    can_open_tasks: false
+    trust: low
+hold_rules:
+  - {name: first-contact-domain, when: {recipient_domain_seen: false}}
+  - {name: commits-money, when: {schema_regex: "(order|payment|invoice)"}}
+# Domains scheduler may reach without a first-contact hold. plainmail.test is deliberately
+# absent: S06 holds scheduler's first message there (S02 records the contact up front).
+known_domains: [contoso.test, agents.contoso.test, dead.test]
+limits:
+  external_per_day: 10000   # the shipped default is 10; one scenario run sends far more
+  references_depth: 12  # S07's responders loop until this; S11's negotiation runs ~8 deep
+  received_depth: 25
+  max_bytes: 10485760
+  blocked_attachment_types:
+    - application/x-msdownload
+    - application/vnd.microsoft.portable-executable
+    - application/x-executable
+    - application/x-mach-binary
+    - text/x-script
+greylisting: false
+content_judge:
+  backend: stub
+  mode: enforce
+  stub_down_file: judge-down

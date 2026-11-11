@@ -1,0 +1,9 @@
+From: human@forwarder.test
+To: scheduler@agents.northwind.test
+Delivered-To: scheduler+t_delivered@agents.northwind.test
+Subject: Forwarded answer
+Date: Wed, 23 Sep 2026 12:11:00 -0700
+Message-ID: <delivered-to@forwarder.test>
+Content-Type: text/plain; charset=utf-8
+
+Forwarded confirmation.

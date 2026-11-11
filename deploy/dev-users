@@ -1,0 +1,14 @@
+# DEVELOPMENT ONLY. Never reuse these passwords outside the isolated .test stack.
+victor@northwind.test|dev-victor
+scheduler@agents.northwind.test|dev-scheduler
+restricted@agents.northwind.test|dev-restricted
+planner@agents.northwind.test|dev-planner
+ops@contoso.test|dev-ops
+intake@agents.contoso.test|dev-intake
+intake-observe@agents.contoso.test|dev-intake-observe
+intake-off@agents.contoso.test|dev-intake-off
+inspections@agents.contoso.test|dev-inspections
+outpost@agents.contoso.test|dev-outpost
+pat@plainmail.test|dev-pat
+gateway|dev-gateway
+approver|dev-approver

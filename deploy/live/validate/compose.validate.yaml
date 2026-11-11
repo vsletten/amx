@@ -1,0 +1,37 @@
+# Local validation only (tools/live_validate.py, docs/selfhost-public.md "Validate locally"). Nothing
+# here belongs on a live host. It replaces the host's resolver with a CoreDNS that answers only
+# the fake zones and forwards nothing, and adds an SMTP sink for the fake outside domain
+# client.example.test, so no query and no message leaves the machine. Every published port is
+# bound to 127.0.0.1 by the validation parameters.
+services:
+  mailhost:
+    dns: ["${VALIDATE_DNS_IP:?}"]
+  gateway:
+    dns: ["${VALIDATE_DNS_IP:?}"]
+  dns:
+    image: coredns/coredns:1.12.4
+    command: -conf /etc/coredns/Corefile
+    restart: unless-stopped
+    volumes:
+      - ${VALIDATE_DIR:?}/coredns:/etc/coredns:ro
+    ports:
+      - "127.0.0.1:${VALIDATE_DNS_PORT:?}:53/udp"
+      - "127.0.0.1:${VALIDATE_DNS_PORT:?}:53/tcp"
+      - "127.0.0.1:${VALIDATE_BROKEN_DNS_PORT:?}:54/udp"
+      - "127.0.0.1:${VALIDATE_BROKEN_DNS_PORT:?}:54/tcp"
+    networks:
+      live:
+        ipv4_address: ${VALIDATE_DNS_IP:?}
+  sink:
+    build:
+      context: ../..  # paths resolve against the first compose file (deploy/live)
+      dockerfile: deploy/gateway/Dockerfile
+    entrypoint: ["/app/.venv/bin/python", "/validate/sink.py"]
+    restart: unless-stopped
+    volumes:
+      - ./validate/sink.py:/validate/sink.py:ro
+      - ${VALIDATE_DIR:?}/sink-tls:/tls:ro
+      - ${VALIDATE_DIR:?}/sink-out:/out
+    networks:
+      live:
+        ipv4_address: ${VALIDATE_SINK_IP:?}

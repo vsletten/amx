@@ -1,0 +1,31 @@
+{
+  "result": {
+    "card": null,
+    "idempotency_key": null,
+    "intent": "response",
+    "lane": "human",
+    "payload": null,
+    "protocol": null,
+    "reply_by": null,
+    "report": null,
+    "schema": null,
+    "sender": {
+      "address": "pat@plainmail.test",
+      "display_name": null,
+      "dkim_domain": null,
+      "dkim_selector": null
+    },
+    "task": "t_gmail",
+    "task_state": null,
+    "text": "Friday morning works.\n",
+    "thread": {
+      "in_reply_to": "<quote-request@agents.northwind.test>",
+      "message_id": "<gmail-reply@plainmail.test>",
+      "references": [
+        "<root@agents.northwind.test>",
+        "<quote-request@agents.northwind.test>"
+      ]
+    },
+    "trust": null
+  }
+}

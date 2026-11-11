@@ -1,0 +1,42 @@
+# SH-26: two distinct machines, no inbound endpoints or shared custody state.
+x-agent-host: &agent-host
+  build:
+    context: ../..
+    dockerfile: deploy/ax/Dockerfile
+    args:
+      AMX_UID: ${AMX_UID:?}
+      AMX_GID: ${AMX_GID:?}
+  user: "${AMX_UID:?}:${AMX_GID:?}"
+  init: true
+  stop_grace_period: 40s
+  profiles: [agent-hosts]
+  dns: [127.0.0.1]
+  networks:
+    live: {}
+  environment:
+    HOME: /state
+    AX_HOME: /state/ax
+    XDG_STATE_HOME: /state/custody
+    TMPDIR: /tmp
+    OMP_NUM_THREADS: "8"
+    OPENBLAS_NUM_THREADS: "8"
+    MKL_NUM_THREADS: "8"
+  extra_hosts:
+    - "mail.home.arpa:${MAILHOST_IP:?}"
+    - "gateway.home.arpa:${GATEWAY_IP:?}"
+  entrypoint: [/app/.venv/bin/python, /fixture/selfhost_agent_host.py]
+services:
+  host-ax:
+    <<: *agent-host
+    command: [serve, ax]
+    volumes:
+      - ${STALWART_DIR:?}/../hosts/ax:/state
+      - ${SECRETS_DIR:?}/tls/ca.pem:/fixture/ca.pem:ro
+      - ../../tools/selfhost_agent_host.py:/fixture/selfhost_agent_host.py:ro
+  host-mcp:
+    <<: *agent-host
+    command: [serve, mcp]
+    volumes:
+      - ${STALWART_DIR:?}/../hosts/mcp:/state
+      - ${SECRETS_DIR:?}/tls/ca.pem:/fixture/ca.pem:ro
+      - ../../tools/selfhost_agent_host.py:/fixture/selfhost_agent_host.py:ro

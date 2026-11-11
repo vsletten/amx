@@ -1,0 +1,28 @@
+From: scheduler@agents.northwind.test
+To: intake@agents.contoso.test
+Subject: Temporary Malformed Source
+Date: Wed, 23 Sep 2026 19:00:00 +0000
+Message-ID: <temporary-malformed-source@agents.northwind.test>
+Auto-Submitted: auto-generated
+Agent-Protocol: amx/0.1
+Agent-Intent: request
+Agent-Task: t_temporary_malformed_source
+Agent-Task-State: submitted
+Agent-Schema: https://evtmail.ai/schema/0.1/request.json
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="amx-temporary-malformed-source"
+
+--amx-temporary-malformed-source
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Malformed payload follows.
+
+--amx-temporary-malformed-source
+Content-Type: application/ld+json
+Content-Disposition: inline; filename="payload.json"
+MIME-Version: 1.0
+Content-Purpose: Machine-readable
+
+{not json
+--amx-temporary-malformed-source--

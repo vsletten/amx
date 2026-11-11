@@ -1,0 +1,31 @@
+From: scheduler@agents.northwind.test
+To: intake@agents.contoso.test
+Subject: 01 Request
+Date: Wed, 23 Sep 2026 19:00:00 +0000
+Message-ID: <01-request@agents.northwind.test>
+Auto-Submitted: auto-generated
+Agent-Protocol: amx/0.1
+Agent-Intent: request
+Agent-Task: t_01_request
+Agent-Task-State: submitted
+Agent-Schema: https://evtmail.ai/schema/0.1/request.json
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="amx-01-request"
+
+--amx-01-request
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Please inspect Harbor Road.
+
+--amx-01-request
+Content-Type: application/ld+json
+Content-Transfer-Encoding: base64
+Content-Disposition: inline; filename="payload.json"
+MIME-Version: 1.0
+Content-Purpose: Machine-readable
+
+eyJAY29udGV4dCI6Imh0dHBzOi8vc2NoZW1hLm9yZyIsImFjdGlvbiI6Imluc3BlY3QiLCJhcmd1
+bWVudHMiOnsic2l0ZSI6IkhhcmJvciBSb2FkIn19
+
+--amx-01-request--

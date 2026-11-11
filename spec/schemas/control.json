@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evtmail.ai/schema/0.1/control.json",
+  "title": "AMX agent control declaration",
+  "description": "An agent's declaration to its own gateway (PLAN §5.10): its own state (pause, resume, capacity), or its refusal of one message the gateway filed for it (refuse, PLAN §5.11). It goes only to the gateway's control address, by the agent's authenticated submission, and is never relayed or delivered. Every field is an enum, an integer, a timestamp, or an address or Message-ID of bounded shape: no free text. Each command is one branch below.",
+  "type": "object",
+  "required": ["@context", "command"],
+  "properties": {
+    "@context": {"const": "https://schema.org"},
+    "command": {"enum": ["pause", "resume", "capacity", "refuse"]},
+    "until": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,6})?(Z|[+-][0-9]{2}:[0-9]{2})$"
+    },
+    "reason": {
+      "enum": [
+        "maintenance",
+        "overloaded",
+        "offline",
+        "upstream-unavailable",
+        "operator",
+        "policy",
+        "content",
+        "unsupported",
+        "handler-failed",
+        "unreadable"
+      ]
+    },
+    "max": {"type": "integer", "minimum": 1, "maximum": 10000},
+    "ttl_seconds": {"type": "integer", "minimum": 1, "maximum": 86400},
+    "recipient": {
+      "type": "string",
+      "maxLength": 254,
+      "pattern": "^[a-z0-9][a-z0-9._-]*(\\+[a-z0-9_-]+)?@[a-z0-9][a-z0-9.-]*$"
+    },
+    "message_id": {
+      "type": "string",
+      "maxLength": 250,
+      "pattern": "^<[!-;=?-~]+@[!-;=?-~]+>$"
+    },
+    "status": {"enum": ["5.7.1", "5.6.0", "5.3.0"]}
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {"properties": {"command": {"const": "pause"}}},
+      "then": {
+        "required": ["until", "reason"],
+        "properties": {
+          "reason": {
+            "enum": ["maintenance", "overloaded", "offline", "upstream-unavailable", "operator"]
+          },
+          "max": false,
+          "ttl_seconds": false,
+          "recipient": false,
+          "message_id": false,
+          "status": false
+        }
+      }
+    },
+    {
+      "if": {"properties": {"command": {"const": "resume"}}},
+      "then": {
+        "properties": {
+          "until": false,
+          "reason": false,
+          "max": false,
+          "ttl_seconds": false,
+          "recipient": false,
+          "message_id": false,
+          "status": false
+        }
+      }
+    },
+    {
+      "if": {"properties": {"command": {"const": "capacity"}}},
+      "then": {
+        "required": ["max", "ttl_seconds"],
+        "properties": {
+          "until": false,
+          "reason": false,
+          "recipient": false,
+          "message_id": false,
+          "status": false
+        }
+      }
+    },
+    {
+      "if": {"properties": {"command": {"const": "refuse"}}},
+      "then": {
+        "required": ["recipient", "message_id", "status", "reason"],
+        "properties": {
+          "reason": {"enum": ["policy", "content", "unsupported", "handler-failed", "unreadable"]},
+          "until": false,
+          "max": false,
+          "ttl_seconds": false
+        }
+      }
+    }
+  ]
+}

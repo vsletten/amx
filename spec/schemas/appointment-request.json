@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evtmail.ai/schema/0.1/appointment-request.json",
+  "title": "AMX appointment request",
+  "type": "object",
+  "required": ["@context", "@type", "reservationFor", "amx:window", "amx:ask"],
+  "properties": {
+    "@context": {"type": ["string", "object", "array"]},
+    "@type": {"const": "Reservation"},
+    "reservationStatus": {"type": "string"},
+    "underName": {"type": "object"},
+    "reservationFor": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "@type": {"type": "string"},
+        "name": {"type": "string", "minLength": 1},
+        "location": {"type": "object"}
+      },
+      "additionalProperties": true
+    },
+    "amx:window": {
+      "type": "object",
+      "required": ["start", "end"],
+      "properties": {
+        "start": {"type": "string", "format": "date"},
+        "end": {"type": "string", "format": "date"},
+        "preferred": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "amx:ask": {"enum": ["propose_slots", "confirm_slot", "cancel"]},
+    "amx:count": {"type": "integer", "minimum": 1}
+  },
+  "additionalProperties": true
+}

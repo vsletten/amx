@@ -1,0 +1,116 @@
+# The live bundle: ONE agent domain on ONE internet-facing host (docs/selfhost-public.md, PLAN §11).
+# Run it through `amx live` (deploy/live/amxlive), which passes --project-name and --env-file
+# <state>/compose.env. That file has no secrets; the secrets are files under ${SECRETS_DIR}, and
+# TYPESAFE_API_KEY / AMX_LLM_API_KEY reach the gateway only from the caller's environment.
+#
+# Published: 25 (SMTP, STARTTLS), 587 (the gateway's submission: STARTTLS, then AUTH), 993
+# (IMAPS for people and remote runners). Never published: the mailhost's 143 (the gateway's
+# master login) and :10025 (reinjection, no milter), the gateway's milter (8890) and LMTP (2424).
+# Those listen only on the containers' addresses on this private network.
+
+x-logging: &logging
+  driver: json-file
+  options: {max-size: "20m", max-file: "5"}
+
+services:
+  mailhost:
+    build:
+      context: ./mailhost
+      additional_contexts:
+        shared: ../mailhost  # the dev mailhost's Dovecot ACL, unchanged (PLAN §8, §5.9)
+    hostname: ${MX_HOST:?}
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      MX_HOST: ${MX_HOST:?}
+      AGENT_DOMAIN: ${AGENT_DOMAIN:?}
+      MAILHOST_IP: ${MAILHOST_IP:?}
+      GATEWAY_IP: ${GATEWAY_IP:?}
+      ROLE_ADDRESSES: ${ROLE_ADDRESSES:?}
+      ROLE_FORWARD: ${ROLE_FORWARD:-}
+      MAX_BYTES: ${MAX_BYTES:?}
+      GLOBAL_MAX_BYTES: ${GLOBAL_MAX_BYTES:?}
+    ports:
+      - "${BIND_ADDRESS:?}:${SMTP_PORT:?}:25"
+      - "${BIND_ADDRESS:?}:${IMAPS_PORT:?}:993"
+    volumes:
+      - ${SECRETS_DIR:?}/mailhost:/secrets:ro
+      - ${SECRETS_DIR:?}/tls:/tls:ro
+      - mail:/var/mail/vhosts
+      # The queue: mail waiting to be retried survives `down`, `up --build`, and a restart.
+      - spool:/var/spool/postfix
+    # No network connection: a process check, so the healthcheck adds no SMTP or IMAP sessions
+    # (the dev stack's port-25 check writes a policy row every 2 s, PLAN §8). It also requires
+    # a recent successful pass of the loop that merges registered agents (amx-sync-accounts,
+    # PLAN §11.5): a loop that is stuck or failing is unhealthy, not merely alive.
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "postfix status >/dev/null 2>&1 && kill -0 $$(cat /run/dovecot/master.pid) && test -n \"$$(find /run/amx-sync-accounts.ok -mmin -2 2>/dev/null)\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+    networks:
+      live:
+        ipv4_address: ${MAILHOST_IP:?}
+
+  gateway:
+    build:
+      context: ../..
+      dockerfile: deploy/gateway/Dockerfile
+    command: ["--config", "/secrets/gateway.yaml"]
+    restart: unless-stopped
+    logging: *logging
+    user: "${AMX_UID:?}:${AMX_GID:?}"
+    extra_hosts:
+      # In-process agents submit to this container's own listener by the MX host's name, the
+      # name its certificate carries (listeners.submission_client_host).
+      - "${MX_HOST:?}:127.0.0.1"
+      - "host.docker.internal:host-gateway"  # a model server on the host (llm.base_url)
+    environment:
+      AMX_HANDLER_LOG: /data/handler.jsonl
+      # jev only when the caller's environment has TYPESAFE_API_KEY (`amx live up` decides).
+      AMX_CONTENT_JUDGE_BACKEND: ${AMX_CONTENT_JUDGE_BACKEND:-stub}
+      TYPESAFE_API_KEY: ${TYPESAFE_API_KEY:-}
+      AMX_LLM_BASE_URL: ${AMX_LLM_BASE_URL:-}
+      AMX_LLM_MODEL: ${AMX_LLM_MODEL:-}
+      AMX_LLM_API_KEY: ${AMX_LLM_API_KEY:-}
+      AMX_LLM_TIMEOUT: ${AMX_LLM_TIMEOUT:-}
+      AMX_LLM_BRIEFS: /etc/amx/llm-briefs.yaml
+      AMX_LLM_STATE: /data/llm
+    depends_on:
+      mailhost:
+        condition: service_healthy
+    ports:
+      - "${BIND_ADDRESS:?}:${SUBMISSION_PORT:?}:2587"
+    volumes:
+      - ${SECRETS_DIR:?}/gateway:/secrets:ro
+      - ${SECRETS_DIR:?}/tls:/tls:ro
+      - ${DATA_DIR:?}:/data
+      - ${LLM_BRIEFS:?}:/etc/amx/llm-briefs.yaml:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/app/.venv/bin/python -c \"import socket; [socket.create_connection(a, 2).close() for a in (('${GATEWAY_IP}', 8890), ('${GATEWAY_IP}', 2424), ('127.0.0.1', 2587))]\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+    networks:
+      live:
+        ipv4_address: ${GATEWAY_IP:?}
+
+networks:
+  live:
+    ipam:
+      config:
+        - subnet: ${SUBNET:?}
+
+volumes:
+  mail:
+  spool:

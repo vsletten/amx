@@ -1,0 +1,46 @@
+# Fixture-only edge: Docker does not publish ports from an internal-only bridge.
+# The mail containers remain sealed. This TCP proxy can connect only to the three
+# fixed fixture endpoints; it routes no IP packets and performs no DNS/mail work.
+services:
+  mailhost:
+    ports: !reset []
+  gateway:
+    ports: !reset []
+  fixture-edge:
+    image: alpine/socat:1.8.0.3@sha256:beb4a68d9e4fe6b0f21ea774a0fde6c31f580dde6368939ed70100c5385b015e
+    init: true
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+
+        socat TCP-LISTEN:993,fork,reuseaddr TCP:${MAILHOST_IP:?}:993 &
+        socat TCP-LISTEN:465,fork,reuseaddr TCP:${MAILHOST_IP:?}:465 &
+        socat TCP-LISTEN:443,fork,reuseaddr TCP:${MAILHOST_IP:?}:443 &
+        socat TCP-LISTEN:2587,fork,reuseaddr TCP:${GATEWAY_IP:?}:2587 &
+        wait -n; exit 1
+    ports:
+
+      - "127.0.0.1:${IMAPS_PORT:?}:993"
+      - "127.0.0.1:${PEOPLE_SUBMISSION_PORT:?}:465"
+      - "127.0.0.1:${DISCOVERY_PORT:?}:443"
+      - "127.0.0.1:${SUBMISSION_PORT:?}:2587"
+    networks:
+      live: {}
+      fixture-edge: {}
+  sink:
+    build:
+      context: ../..
+      dockerfile: deploy/gateway/Dockerfile
+    entrypoint: ["/app/.venv/bin/python", "/validate/private_sink.py"]
+    volumes:
+      - ./validate/private_sink.py:/validate/private_sink.py:ro
+      - ${STALWART_DIR:?}/../sink-out:/out
+    networks:
+      # Fixed fixture-only address: Stalwart's resolver must not need public DNS.
+      live:
+        ipv4_address: 172.31.250.60
+networks:
+  fixture-edge: {}
+# Stalwart uses a retained bind datastore, not the inherited Postfix volumes.
+# Do not create unused named volumes: ordinary down must remove all fixture resources.
+volumes: !reset {}

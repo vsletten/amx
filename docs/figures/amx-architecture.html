@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>amx architecture</title>
+<style>
+  :root {
+    --ink: #1c2430; --muted: #5b6774; --line: #c9d1da; --bg: #ffffff;
+    --gw: #1f4e79; --gw-bg: #eaf1f8; --gw-line: #7ea3c8;
+    --agent: #0f7c6a; --agent-bg: #e6f4f1;
+    --human: #a05a00; --human-bg: #fbf1e0;
+    --mta: #4a5560; --mta-bg: #f1f3f5;
+    --world-bg: #f7f8fa; --reject: #b23a2e; --accent: #d97b1f;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); }
+  body { width: 1600px; height: 900px; overflow: hidden; position: relative;
+         font-family: "Liberation Sans", "DejaVu Sans", Arial, sans-serif; color: var(--ink); }
+  .abs { position: absolute; }
+  h1 { margin: 0; font-size: 34px; letter-spacing: -0.01em; }
+  h1 span { color: var(--gw); }
+  .sub { font-size: 17px; color: var(--muted); margin-top: 6px; }
+  .box { position: absolute; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; padding: 12px 14px; }
+  .box .t { font-weight: bold; font-size: 15px; letter-spacing: 0.02em; text-transform: uppercase; }
+  .box .d { font-size: 13.5px; color: var(--muted); margin-top: 4px; line-height: 1.32; }
+  .tag { display: inline-block; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.06em;
+         padding: 2px 8px; border-radius: 999px; margin-left: 8px; vertical-align: middle; }
+  .mta { border-color: #b9c2cc; background: var(--mta-bg); }
+  .mta .t { color: var(--mta); }
+  .gw { border: 2.5px solid var(--gw); background: var(--gw-bg); }
+  .gw > .t { color: var(--gw); font-size: 16px; }
+  .gw > .d { color: #33475c; }
+  .col { position: absolute; top: 62px; height: 208px; background: #fff; border: 1px solid var(--gw-line); border-radius: 8px; padding: 10px 12px; }
+  .col .h { font-weight: bold; font-size: 13.5px; color: var(--gw); text-transform: uppercase; letter-spacing: 0.04em; }
+  .col .s { font-size: 11.5px; color: var(--muted); margin-bottom: 6px; }
+  .col ul { margin: 0; padding-left: 14px; font-size: 12.5px; line-height: 1.3; }
+  .col li { margin-bottom: 3px; }
+  .agent { border-color: var(--agent); background: var(--agent-bg); }
+  .agent .t { color: var(--agent); }
+  .human { border-color: var(--human); background: var(--human-bg); }
+  .human .t { color: var(--human); }
+  .world { border-color: #cfd6de; background: var(--world-bg); }
+  .region { position: absolute; border: 1.5px dashed #b7c0ca; border-radius: 14px; }
+  .region-label { position: absolute; font-size: 12.5px; font-weight: bold; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); background: #fff; padding: 0 8px; }
+  .dns { position: absolute; font-size: 13px; color: var(--muted); border: 1.5px solid var(--line); border-radius: 8px; padding: 8px 12px; background: #fff; }
+  .dns b { color: var(--ink); }
+  .num { display: inline-block; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 13px; font-weight: bold; text-align: center; line-height: 22px; margin-right: 6px; vertical-align: middle; }
+  .msg { position: absolute; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; padding: 10px 14px; font-size: 13px; }
+  .msg .t { font-weight: bold; font-size: 14px; }
+  code { font-family: "Liberation Mono", "DejaVu Sans Mono", monospace; font-size: 12px; background: #f1f3f5; padding: 1px 5px; border-radius: 4px; color: #2b3a4a; }
+  .part { display: inline-block; border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; margin-right: 8px; font-size: 12.5px; vertical-align: middle; background: #fafbfc; }
+  .part b { display: block; font-size: 12px; }
+  .lbl { position: absolute; font-size: 11.5px; color: var(--muted); background: #fff; padding: 0 4px; white-space: nowrap; }
+  .net { position: absolute; font-size: 12.5px; color: var(--muted); text-align: center; line-height: 1.3; }
+  .net b { color: var(--ink); font-size: 13px; }
+  .foot { position: absolute; left: 40px; right: 40px; bottom: 10px; font-size: 12px; color: #8a949e; }
+</style>
+</head>
+<body>
+
+<div class="abs" style="left:40px; top:26px; width:1520px;">
+  <h1><span>amx</span> · Agent Mail Exchange <span style="font-weight:normal; color:var(--muted); font-size:22px;">— give agents an address, not an API</span></h1>
+  <div class="sub">Email already has delivery, retry, backpressure, DNS federation, verified identity, threading and a durable record. amx keeps the mail server as-is and adds one small gateway.</div>
+</div>
+
+<!-- Your domain region -->
+<div class="region" style="left:40px; top:112px; width:960px; height:646px;"></div>
+<div class="region-label" style="left:60px; top:104px;">Your organization · agents.example.com · one docker compose file</div>
+
+<div class="dns" style="left:60px; top:130px; width:920px;">
+  <b>DNS you already own:</b> MX &nbsp;·&nbsp; SPF &nbsp;·&nbsp; DMARC p=reject &nbsp;·&nbsp; <b>one DKIM key per agent</b> (revoke an agent = delete one record) &nbsp;·&nbsp; agent card pointer
+</div>
+
+<div class="box mta" style="left:60px; top:190px; width:920px; height:78px;">
+  <div class="t">Unmodified mail server <span class="tag" style="background:#dfe5eb; color:#4a5560;">off the shelf</span></div>
+  <div class="d">Postfix + Dovecot today, Stalwart next. Accepts and sends SMTP, queues and retries for days, keeps mailboxes people can open over IMAP. <b>Nothing in it is patched.</b></div>
+</div>
+
+<div class="box gw" style="left:60px; top:300px; width:920px; height:284px;">
+  <div class="t"><span class="num">2</span>amx gateway <span class="tag" style="background:var(--gw); color:#fff;">the product</span></div>
+  <div class="d">One small service on the server's three standard hooks. Policy is decided before any agent code runs on an untrusted message.</div>
+
+  <div class="col" style="left:12px; width:225px;">
+    <div class="h">Ingress · policy</div>
+    <div class="s">at the SMTP transaction (milter)</div>
+    <ul>
+      <li>Verify the sender's <b>per-agent</b> signature</li>
+      <li>Validate the JSON part against its schema</li>
+      <li>Agent busy → <b>450 try later</b>; the sender's server retries by itself</li>
+      <li>Bad message → <b>550 + reason</b>; never stored</li>
+      <li>Optional content judge: injection? parts agree?</li>
+    </ul>
+  </div>
+  <div class="col" style="left:247px; width:210px;">
+    <div class="h">Delivery · invoke</div>
+    <div class="s">over LMTP</div>
+    <ul>
+      <li><b>Delivery is invocation:</b> the message is handed straight to the agent's handler</li>
+      <li>The handler's result <i>is</i> the reply: done, retry later, or bounce</li>
+      <li>A copy lands in a real mailbox a person can open</li>
+      <li>No polling, no webhooks</li>
+    </ul>
+  </div>
+  <div class="col" style="left:467px; width:215px;">
+    <div class="h">Outbound · hold queue</div>
+    <div class="s">authenticated submission</div>
+    <ul>
+      <li>Signs with the agent's own key; per-agent rate limits</li>
+      <li>Hold rules (commits money, new domain, tainted input) file the mail in <b>Outbox/Held</b></li>
+      <li>A person approves it from any mail client; only then is it signed and sent</li>
+    </ul>
+  </div>
+  <div class="col" style="left:692px; width:212px;">
+    <div class="h">Journal · record</div>
+    <div class="s">append-only, hash-chained</div>
+    <ul>
+      <li>Every message in and out, SHA-256 chained to the previous entry</li>
+      <li>Tampering is detectable; duplicates are handled once</li>
+      <li><code>amx trace &lt;task&gt;</code> tells one task's story end to end</li>
+    </ul>
+  </div>
+</div>
+
+<div class="box agent" style="left:60px; top:622px; width:560px; height:118px;">
+  <div class="t"><span class="num">3</span>Your agents</div>
+  <div class="d">Python SDK handler or MCP tools, in your own runtime. An agent receives a message as data and sends a reply; it never speaks SMTP and never sees a key.<br>
+  <code>scheduler@agents.example.com</code> &nbsp; <code>intake@agents.example.com</code> &nbsp; …</div>
+</div>
+
+<div class="box human" style="left:660px; top:622px; width:320px; height:118px;">
+  <div class="t">Your people</div>
+  <div class="d">Any mail client. Sit on CC of agent conversations, open an agent's inbox, and drag held mail to <b>Outbox/Approved</b>. Oversight comes with the medium, not a dashboard.</div>
+</div>
+
+<!-- Network band -->
+<div class="net" style="left:1002px; top:572px; width:76px;">
+  <b>SMTP</b><br>over TLS<br>store &amp; forward<br>retry for days
+</div>
+
+<!-- Rest of the world -->
+<div class="region" style="left:1080px; top:112px; width:480px; height:646px;"></div>
+<div class="region-label" style="left:1100px; top:104px;">Everyone else · reachable on day one</div>
+
+<div class="box world" style="left:1100px; top:140px; width:440px; height:150px;">
+  <div class="t" style="color:var(--gw)">Another organization running amx</div>
+  <div class="d">Their agents have verified identities and speak the same message profile. Tasks, states and schemas travel in headers and a JSON part. No shared platform, no exchanged API keys: addressing is DNS MX.</div>
+</div>
+
+<div class="box world" style="left:1100px; top:310px; width:440px; height:150px;">
+  <div class="t" style="color:var(--human)">People on Gmail, Outlook, a phone</div>
+  <div class="d">They see the plain-text part and hit Reply. The reply comes back to the right task because the correlation token lives in the address itself (<code>agent+t_8f3a2c@…</code>), which survives every client and every forward.</div>
+</div>
+
+<div class="box world" style="left:1100px; top:480px; width:440px; height:120px;">
+  <div class="t" style="color:var(--mta)">Any existing mail system</div>
+  <div class="d">Legacy business systems, ticketing, mailing lists, hosted "agent inbox" products. If it can send an email, it can talk to your agent. Four billion mailboxes need nothing installed.</div>
+</div>
+
+<div class="box world" style="left:1100px; top:620px; width:440px; height:110px; border-style:dashed;">
+  <div class="t" style="color:var(--reject)">What it is not</div>
+  <div class="d">Not a new wire protocol, not low-latency, not a replacement for A2A or MCP. It is the cross-organization, offline-tolerant, human-inspectable transport those protocols lack.</div>
+</div>
+
+<!-- Message anatomy -->
+<div class="msg" style="left:40px; top:770px; width:1520px; height:90px;">
+  <div class="t"><span class="num">1</span>Every message is an ordinary email <span style="font-weight:normal; color:var(--muted)">— the profile is a way of writing RFC 5322, not a new format</span></div>
+  <div style="margin-top:8px;">
+    <span class="part"><b>Headers</b><code>Agent-Intent: request</code> <code>Agent-Task: t_8f3a2c</code> <code>Agent-Schema: appointment-request.json</code> <code>DKIM-Signature: s=scheduler</code></span>
+    <span class="part"><b>text/plain · required</b>the message, written for a person</span>
+    <span class="part"><b>application/ld+json · optional</b>the same content for a machine (IETF Structured Email)</span>
+  </div>
+</div>
+
+<!-- Arrow overlay -->
+<svg class="abs" style="left:0; top:0;" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4a5560"/>
+    </marker>
+    <marker id="ahb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f4e79"/>
+    </marker>
+  </defs>
+  <g stroke="#4a5560" stroke-width="2" fill="none">
+    <!-- MTA <-> gateway hooks -->
+    <line x1="170" y1="268" x2="170" y2="300" marker-end="url(#ah)" marker-start="url(#ah)"/>
+    <line x1="410" y1="268" x2="410" y2="300" marker-end="url(#ah)"/>
+    <line x1="640" y1="300" x2="640" y2="268" marker-end="url(#ah)"/>
+    <!-- gateway <-> agents -->
+    <line x1="330" y1="584" x2="330" y2="622" marker-end="url(#ah)"/>
+    <line x1="560" y1="622" x2="560" y2="584" marker-end="url(#ah)"/>
+    <!-- gateway/MTA <-> people (IMAP) -->
+    <line x1="850" y1="584" x2="850" y2="622" marker-end="url(#ah)" marker-start="url(#ah)"/>
+    <!-- world <-> MTA -->
+    <path d="M980,229 L1000,229 L1000,215 L1100,215" marker-end="url(#ah)" marker-start="url(#ah)"/>
+    <path d="M1100,385 L1050,385 L1050,229" />
+    <path d="M1100,540 L1050,540 L1050,385" />
+  </g>
+  <g font-family="Liberation Sans, Arial, sans-serif" font-size="11.5" fill="#5b6774">
+    <rect x="176" y="276" width="42" height="16" fill="#fff"/><text x="178" y="288">milter</text>
+    <rect x="416" y="276" width="38" height="16" fill="#fff"/><text x="418" y="288">LMTP</text>
+    <rect x="646" y="276" width="76" height="16" fill="#fff"/><text x="648" y="288">reinject :10025</text>
+    <rect x="336" y="596" width="44" height="16" fill="#fff"/><text x="338" y="608">invoke</text>
+    <rect x="566" y="596" width="36" height="16" fill="#fff"/><text x="568" y="608">send</text>
+    <rect x="856" y="596" width="80" height="16" fill="#fff"/><text x="858" y="608">IMAP / approve</text>
+  </g>
+</svg>
+
+<div class="foot">Prototype: Python gateway on Postfix + Dovecot, exercised by an end-to-end scenario suite (S01–S17) across three .test domains. Open source, Apache-2.0.</div>
+</body>
+</html>

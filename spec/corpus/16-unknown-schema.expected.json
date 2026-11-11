@@ -1,0 +1,6 @@
+{
+  "error": {
+    "contains": "local registry",
+    "type": "UnknownSchemaError"
+  }
+}

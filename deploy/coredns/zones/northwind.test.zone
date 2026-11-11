@@ -1,0 +1,6 @@
+$ORIGIN northwind.test.
+$TTL 30
+@ IN SOA mail.northwind.test. hostmaster.northwind.test. (2026092301 30 30 300 30)
+@ IN NS mail.northwind.test.
+@ IN MX 10 mail.northwind.test.
+mail IN A 172.30.0.10

@@ -1,0 +1,31 @@
+From: scheduler@agents.northwind.test
+To: intake@agents.contoso.test
+Subject: 05 Error
+Date: Wed, 23 Sep 2026 19:00:00 +0000
+Message-ID: <05-error@agents.northwind.test>
+Auto-Submitted: auto-generated
+Agent-Protocol: amx/0.1
+Agent-Intent: error
+Agent-Task: t_05_error
+Agent-Task-State: failed
+Agent-Schema: https://evtmail.ai/schema/0.1/error.json
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="amx-05-error"
+
+--amx-05-error
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+The location could not be found.
+
+--amx-05-error
+Content-Type: application/ld+json
+Content-Transfer-Encoding: base64
+Content-Disposition: inline; filename="payload.json"
+MIME-Version: 1.0
+Content-Purpose: Machine-readable
+
+eyJAY29udGV4dCI6Imh0dHBzOi8vc2NoZW1hLm9yZyIsImNvZGUiOiJsb2NhdGlvbi1ub3QtZm91
+bmQiLCJtZXNzYWdlIjoiTm8gbWF0Y2hpbmcgc2l0ZSIsInJldHJ5YWJsZSI6ZmFsc2V9
+
+--amx-05-error--

@@ -1,0 +1,34 @@
+{
+  "result": {
+    "card": null,
+    "idempotency_key": null,
+    "intent": "request",
+    "lane": "agent",
+    "payload": {
+      "@context": "https://schema.org",
+      "action": "réserver",
+      "arguments": {
+        "city": "Montréal"
+      }
+    },
+    "protocol": "amx/0.1",
+    "reply_by": null,
+    "report": null,
+    "schema": "https://evtmail.ai/schema/0.1/request.json",
+    "sender": {
+      "address": "scheduler@agents.northwind.test",
+      "display_name": null,
+      "dkim_domain": null,
+      "dkim_selector": null
+    },
+    "task": "t_12_unicode_request",
+    "task_state": "submitted",
+    "text": "Réservez une visite à Montréal.\n",
+    "thread": {
+      "in_reply_to": null,
+      "message_id": "<12-unicode-request@agents.northwind.test>",
+      "references": []
+    },
+    "trust": null
+  }
+}

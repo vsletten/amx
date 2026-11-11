@@ -1,0 +1,33 @@
+{
+  "result": {
+    "card": null,
+    "idempotency_key": null,
+    "intent": "error",
+    "lane": "system",
+    "payload": null,
+    "protocol": null,
+    "reply_by": null,
+    "report": {
+      "action": "failed",
+      "diagnostic": "smtp; connection timed out",
+      "recipient": "intake@unreachable.test",
+      "status": "4.4.1"
+    },
+    "schema": null,
+    "sender": {
+      "address": "mailer-daemon@northwind.test",
+      "display_name": null,
+      "dkim_domain": null,
+      "dkim_selector": null
+    },
+    "task": "t_timeout",
+    "task_state": "failed",
+    "text": "Delivery timed out after repeated attempts.",
+    "thread": {
+      "in_reply_to": null,
+      "message_id": "<dsn-timeout@northwind.test>",
+      "references": []
+    },
+    "trust": null
+  }
+}

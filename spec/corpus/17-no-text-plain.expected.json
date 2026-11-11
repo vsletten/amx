@@ -1,0 +1,6 @@
+{
+  "error": {
+    "contains": "text/plain",
+    "type": "ProfileError"
+  }
+}

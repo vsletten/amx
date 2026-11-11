@@ -1,0 +1,51 @@
+{
+  "result": {
+    "card": "https://northwind.test/.well-known/agents/scheduler.json",
+    "idempotency_key": null,
+    "intent": "request",
+    "lane": "agent",
+    "payload": {
+      "@context": "https://schema.org",
+      "@type": "Reservation",
+      "amx:ask": "propose_slots",
+      "amx:count": 3,
+      "amx:window": {
+        "end": "2026-10-09",
+        "preferred": "morning",
+        "start": "2026-10-05"
+      },
+      "reservationFor": {
+        "@type": "Service",
+        "location": {
+          "@type": "Place",
+          "address": "1200 Harbor Rd"
+        },
+        "name": "Site inspection"
+      },
+      "reservationStatus": "https://schema.org/ReservationPending",
+      "underName": {
+        "@type": "Person",
+        "name": "Victor Sletten"
+      }
+    },
+    "protocol": "amx/0.1",
+    "reply_by": "Wed, 23 Sep 2026 17:00:00 -0700",
+    "report": null,
+    "schema": "https://evtmail.ai/schema/0.1/appointment-request.json",
+    "sender": {
+      "address": "scheduler+t_8f3a2c@agents.northwind.test",
+      "display_name": null,
+      "dkim_domain": null,
+      "dkim_selector": null
+    },
+    "task": "t_8f3a2c",
+    "task_state": "submitted",
+    "text": "Hello,\n\nVictor Sletten would like a site inspection at 1200 Harbor Rd during the week of October 5. Any weekday morning works. Please reply with two or three proposed slots. Victor is copied and can answer questions directly.\n\n-- scheduler, an agent acting for Victor Sletten (northwind.test)\n",
+    "thread": {
+      "in_reply_to": null,
+      "message_id": "<t_8f3a2c.1@agents.northwind.test>",
+      "references": []
+    },
+    "trust": null
+  }
+}

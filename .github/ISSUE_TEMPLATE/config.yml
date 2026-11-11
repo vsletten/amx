@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  # GitHub requires absolute HTTP(S) contact URLs; relative SECURITY.md is invalid.
+  # Keep this name-independent: the linked GitHub instructions explain how to
+  # open this repository's private form, which displays its SECURITY.md policy.
+  - name: Security reports — read SECURITY.md first
+    url: https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/report-privately
+    about: Read SECURITY.md at this repository's root, then use Security → Report a vulnerability. Do not open a public issue.

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evtmail.ai/schema/0.1/ack.json",
+  "title": "AMX acknowledgement",
+  "type": "object",
+  "required": ["@context", "received"],
+  "properties": {
+    "@context": {"type": ["string", "object", "array"]},
+    "@type": {"type": "string"},
+    "received": {"type": "boolean", "const": true},
+    "message": {"type": "string"}
+  },
+  "additionalProperties": true
+}

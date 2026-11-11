@@ -1,0 +1,20 @@
+From: pat@plainmail.test
+To: scheduler+t_mdn@agents.northwind.test
+Subject: Read receipt
+Date: Wed, 23 Sep 2026 12:13:00 -0700
+Message-ID: <mdn@plainmail.test>
+MIME-Version: 1.0
+Content-Type: multipart/report; report-type=disposition-notification; boundary=mdn
+
+--mdn
+Content-Type: text/plain; charset=utf-8
+
+Displayed.
+--mdn
+Content-Type: message/disposition-notification
+
+Final-Recipient: rfc822; pat@plainmail.test
+Original-Message-ID: <request@agents.northwind.test>
+Disposition: manual-action/MDN-sent-manually; displayed
+
+--mdn--

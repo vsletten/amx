@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evtmail.ai/schema/0.1/request.json",
+  "title": "AMX request",
+  "type": "object",
+  "required": ["@context", "action"],
+  "properties": {
+    "@context": {"type": ["string", "object", "array"]},
+    "@type": {"type": "string"},
+    "action": {"type": "string", "minLength": 1},
+    "arguments": {"type": "object"},
+    "replyRequested": {"type": "boolean"}
+  },
+  "additionalProperties": true
+}

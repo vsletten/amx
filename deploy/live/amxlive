@@ -1,0 +1,6 @@
+#!/bin/sh
+# The live bundle's command (docs/selfhost-public.md): `amx live` from this checkout, through uv.
+# Parameters default to deploy/live/live.yaml; pass --params or set AMX_LIVE_PARAMS otherwise.
+set -eu
+root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+exec uv run --project "$root" --quiet amx live "$@"

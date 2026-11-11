@@ -1,0 +1,6 @@
+$ORIGIN dead.test.
+$TTL 5
+@ IN SOA mail.dead.test. hostmaster.dead.test. (2026092401 5 5 30 5)
+@ IN NS mail.dead.test.
+@ IN MX 10 mail.dead.test.
+mail IN A 172.30.0.53

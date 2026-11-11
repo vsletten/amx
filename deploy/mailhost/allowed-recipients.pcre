@@ -1,0 +1,2 @@
+/^[^@]+@(northwind\.test|agents\.northwind\.test|contoso\.test|agents\.contoso\.test|plainmail\.test)$/ OK
+/.*/ REJECT 5.7.1 amx prototype accepts only its isolated .test domains

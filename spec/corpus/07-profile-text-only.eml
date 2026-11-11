@@ -1,0 +1,15 @@
+From: scheduler@agents.northwind.test
+To: intake@agents.contoso.test
+Subject: 07 Profile Text Only
+Date: Wed, 23 Sep 2026 19:00:00 +0000
+Message-ID: <07-profile-text-only@agents.northwind.test>
+Auto-Submitted: auto-generated
+Agent-Protocol: amx/0.1
+Agent-Intent: ack
+Agent-Task: t_07_profile_text_only
+Agent-Task-State: working
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+
+Received; work will begin shortly.

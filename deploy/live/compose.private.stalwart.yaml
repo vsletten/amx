@@ -1,0 +1,7 @@
+# Private profile: no published SMTP ingress, including a remapped host port.
+services:
+  mailhost:
+    ports: !override
+      - "${BIND_ADDRESS:?}:${IMAPS_PORT:?}:993"
+      - "${BIND_ADDRESS:?}:${PEOPLE_SUBMISSION_PORT:?}:465"
+      - "${ADMIN_BIND_ADDRESS:?}:${DISCOVERY_PORT:?}:443"

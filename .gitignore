@@ -1,0 +1,21 @@
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+dist/
+build/
+# runtime state
+var/
+deploy/generated/
+secrets/
+*.sqlite
+*.db
+.env
+# the live bundle (docs/selfhost-public.md): site parameters and state stay out of git
+deploy/live/live.yaml
+deploy/live/state/
+# The one-time bundle `amx agent add --live` writes: plaintext credentials (PLAN §5.2).
+*.credentials.json

@@ -1,0 +1,46 @@
+From: scheduler+t_8f3a2c@agents.northwind.test
+To: intake@agents.contoso.test
+Cc: victor@northwind.test
+Subject: Request: site inspection, week of 2026-10-05
+Date: Mon, 21 Sep 2026 14:02:11 -0700
+Message-ID: <t_8f3a2c.1@agents.northwind.test>
+Auto-Submitted: auto-generated
+Agent-Protocol: amx/0.1
+Agent-Intent: request
+Agent-Task: t_8f3a2c
+Agent-Task-State: submitted
+Agent-Schema: https://evtmail.ai/schema/0.1/appointment-request.json
+Agent-Card: https://northwind.test/.well-known/agents/scheduler.json
+Agent-Reply-By: Wed, 23 Sep 2026 17:00:00 -0700
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="amx-06-proposal-example-request"
+
+--amx-06-proposal-example-request
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+Hello,
+
+Victor Sletten would like a site inspection at 1200 Harbor Rd during the week=
+ of October 5. Any weekday morning works. Please reply with two or three prop=
+osed slots. Victor is copied and can answer questions directly.
+
+-- scheduler, an agent acting for Victor Sletten (northwind.test)
+
+--amx-06-proposal-example-request
+Content-Type: application/ld+json
+Content-Transfer-Encoding: base64
+Content-Disposition: inline; filename="payload.json"
+MIME-Version: 1.0
+Content-Purpose: Machine-readable
+
+eyJAY29udGV4dCI6Imh0dHBzOi8vc2NoZW1hLm9yZyIsIkB0eXBlIjoiUmVzZXJ2YXRpb24iLCJh
+bXg6YXNrIjoicHJvcG9zZV9zbG90cyIsImFteDpjb3VudCI6MywiYW14OndpbmRvdyI6eyJlbmQi
+OiIyMDI2LTEwLTA5IiwicHJlZmVycmVkIjoibW9ybmluZyIsInN0YXJ0IjoiMjAyNi0xMC0wNSJ9
+LCJyZXNlcnZhdGlvbkZvciI6eyJAdHlwZSI6IlNlcnZpY2UiLCJsb2NhdGlvbiI6eyJAdHlwZSI6
+IlBsYWNlIiwiYWRkcmVzcyI6IjEyMDAgSGFyYm9yIFJkIn0sIm5hbWUiOiJTaXRlIGluc3BlY3Rp
+b24ifSwicmVzZXJ2YXRpb25TdGF0dXMiOiJodHRwczovL3NjaGVtYS5vcmcvUmVzZXJ2YXRpb25Q
+ZW5kaW5nIiwidW5kZXJOYW1lIjp7IkB0eXBlIjoiUGVyc29uIiwibmFtZSI6IlZpY3RvciBTbGV0
+dGVuIn19
+
+--amx-06-proposal-example-request--

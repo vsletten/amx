@@ -1,0 +1,31 @@
+From: outpost@agents.contoso.test
+To: control@agents.contoso.test
+Subject: 20 Control Pause
+Date: Wed, 23 Sep 2026 19:00:00 +0000
+Message-ID: <20-control-pause@agents.northwind.test>
+Auto-Submitted: auto-generated
+Agent-Protocol: amx/0.1
+Agent-Intent: event
+Agent-Task: t_control_pause
+Agent-Task-State: completed
+Agent-Schema: https://evtmail.ai/schema/0.1/control.json
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="amx-20-control-pause"
+
+--amx-20-control-pause
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+A control declaration for this agent's gateway: pause.
+
+--amx-20-control-pause
+Content-Type: application/ld+json
+Content-Transfer-Encoding: base64
+Content-Disposition: inline; filename="payload.json"
+MIME-Version: 1.0
+Content-Purpose: Machine-readable
+
+eyJAY29udGV4dCI6Imh0dHBzOi8vc2NoZW1hLm9yZyIsImNvbW1hbmQiOiJwYXVzZSIsInJlYXNv
+biI6Im1haW50ZW5hbmNlIiwidW50aWwiOiIyMDI2LTA5LTIzVDE5OjMwOjAwWiJ9
+
+--amx-20-control-pause--

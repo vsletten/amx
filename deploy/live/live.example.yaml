@@ -1,0 +1,86 @@
+# Parameters for the live bundle (docs/selfhost-public.md). Copy to deploy/live/live.yaml (git
+# ignores it) and edit. No secret goes in this file: `amx live install` generates every password,
+# token, and key into the state directory, and API keys come only from the environment of
+# `amx live up` (install refuses a file that names TYPESAFE_API_KEY or AMX_LLM_API_KEY).
+
+# --- Required ---------------------------------------------------------------------------------
+agent_domain: agents.example.com     # the one agent domain this host serves
+mx_host: mail.example.com            # HELO name, certificate name, and the PTR of public_ip
+public_ip: 203.0.113.10             # the host's public IPv4 address (a documentation address here)
+admin_contact: ops@example.com      # the ACME account's email; replace it (no personal data in git)
+
+# Agents are not listed here. Once the lane is installed, register each one, with no restart
+# (docs/selfhost-public.md §6, PLAN §11.5):
+#   deploy/live/amxlive agent add intake --mode queued --handler amx.examples.intake:handle
+#   deploy/live/amxlive agent add outpost      # remote: a runner on another host
+# Another person's agents need their own household and non-empty sender list (SH-47):
+#   deploy/live/amxlive agent add sons-agent --household son --accept-from child@example.com
+#   deploy/live/amxlive agent set sons-agent --accept-from child@another.example
+# Lists are repeatable addresses/domains; `set` replaces only supplied fields, without new keys.
+# Their outbound list defaults to their own accept_from, never the lane-wide list below; use
+# --outbound-allowlist to override, --inherit-outbound-allowlist to return to that default.
+# Own-domain agent mail stays within a household, even when named in an owner's To/Cc. Unlabeled
+# agents share the default household. `agent list` shows household and accept_from. The operator
+# still reads every mailbox and approves holds for every household (not separate tenants).
+# An install made before registration listed them under `agents:` (name, mode, handler,
+# watermark, workers, external_per_day). `amx live install` still reads that list once, to move
+# those agents into the registry with their keys, credentials, and mailboxes; then delete it.
+
+# --- Optional (defaults shown) -----------------------------------------------------------------
+# org_domain: example.com            # the organization's domain: default, agent_domain's parent
+# dns_zone: example.com              # the zone the records go in: default, org_domain
+# compose_project: amx-live
+# state_dir: ~/amx-live/amx-live    # outside the checkout, so `git clean` cannot take secrets
+# network:
+#   bind_address: 0.0.0.0           # IPv4 only (the bundle's outbound mail is IPv4 too)
+#   subnet: 172.31.250.0/24         # private; mailhost .10, gateway .20
+#   ports: {smtp: 25, submission: 587, imaps: 993, acme_http: 80}
+# tls:
+#   mode: acme                      # acme (Let's Encrypt), or self-signed for local validation
+#   acme_server: letsencrypt        # letsencrypt | staging | an ACME directory URL
+#   challenge: http-01              # http-01 (port 80, renews unattended) | dns-01-manual
+#   dkim_bits: 2048                 # 1024 only where the DNS editor cannot hold a 2048-bit key
+dns:
+  # ttl: 600
+  # dmarc_policy: none              # p=none for the measurement phase: a deliberate relaxation
+  # dmarc_rua: postmaster@agents.example.com   # must be inside dns_zone (RFC 7489 §7.1)
+  manage_apex: true                 # also publish SPF, DMARC, and CAA at @
+  # tls_rpt: true
+  # caa: letsencrypt.org
+# role_mail:
+#   forward_to_admin: false         # true: postmaster@ and abuse@ also go to admin_contact
+# content_judge:
+#   mode: enforce                   # "off" | observe | enforce; jev when TYPESAFE_API_KEY is set
+# limits:
+#   external_per_day: 10
+#   references_depth: 25
+#   received_depth: 25
+#   max_bytes: 10485760              # complete encoded input, not decoded file bytes
+#   blocked_attachment_types:       # true types, regardless of declared Content-Type
+#     - application/x-msdownload
+#     - application/vnd.microsoft.portable-executable
+#     - application/x-executable
+#     - application/x-mach-binary
+#     - text/x-script
+# hold_rules:                       # the gateway YAML's shape (PLAN §5.3); these are the defaults
+#   - {name: first-contact-domain, when: {recipient_domain_seen: false}}
+#   - {name: commits-money, when: {schema_regex: "(order|payment|invoice)"}}
+# trust: []                         # extra grants for counterparties, the gateway YAML's shape
+# known_domains: []                 # domains never treated as a first contact
+# outbound_allowlist: []            # empty: agents may write anywhere (holds and limits apply).
+#                                   # Otherwise only these addresses or domains, e.g.
+#                                   # [person@example.com, example.org]; anything else is refused
+#                                   # at submission. Keep real addresses in live.yaml, not here.
+#                                   # People an accept_from sender puts in To/Cc are allowed in
+#                                   # that task without a listing (SH-46).
+# accept_from: []                   # empty: anyone's mail reaches the agents (as before SH-40).
+#                                   # Otherwise people's mail only from these addresses or domains
+#                                   # ([you@example.org, example.net]), and only when DKIM passes and
+#                                   # aligns with From; anything else is refused with 550 5.7.1 (a
+#                                   # bounce). Listed senders arrive as the agents' owner, so AX
+#                                   # sessions can run with --external verified. Agent mail is
+#                                   # governed by grants and, for own-domain agents, households.
+# llm:                              # for agents with handler amx.examples.llm_agent:handle
+#   base_url: http://host.docker.internal:11434/v1
+#   model: deepseek-v4.1-flash:cloud
+#   briefs: ../gateway/llm-briefs.yaml

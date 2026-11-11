@@ -1,0 +1,30 @@
+From: scheduler@agents.northwind.test
+To: intake@agents.contoso.test
+Subject: Temporary Unknown Source
+Date: Wed, 23 Sep 2026 19:00:00 +0000
+Message-ID: <temporary-unknown-source@agents.northwind.test>
+Auto-Submitted: auto-generated
+Agent-Protocol: amx/0.1
+Agent-Intent: request
+Agent-Task: t_temporary_unknown_source
+Agent-Task-State: submitted
+Agent-Schema: https://schemas.invalid/not-local.json
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="amx-temporary-unknown-source"
+
+--amx-temporary-unknown-source
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Unknown schema.
+
+--amx-temporary-unknown-source
+Content-Type: application/ld+json
+Content-Transfer-Encoding: base64
+Content-Disposition: inline; filename="payload.json"
+MIME-Version: 1.0
+Content-Purpose: Machine-readable
+
+eyJAY29udGV4dCI6Imh0dHBzOi8vc2NoZW1hLm9yZyIsImFjdGlvbiI6Imluc3BlY3QifQ==
+
+--amx-temporary-unknown-source--

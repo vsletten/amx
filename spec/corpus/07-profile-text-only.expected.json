@@ -1,0 +1,28 @@
+{
+  "result": {
+    "card": null,
+    "idempotency_key": null,
+    "intent": "ack",
+    "lane": "agent",
+    "payload": null,
+    "protocol": "amx/0.1",
+    "reply_by": null,
+    "report": null,
+    "schema": null,
+    "sender": {
+      "address": "scheduler@agents.northwind.test",
+      "display_name": null,
+      "dkim_domain": null,
+      "dkim_selector": null
+    },
+    "task": "t_07_profile_text_only",
+    "task_state": "working",
+    "text": "Received; work will begin shortly.\n",
+    "thread": {
+      "in_reply_to": null,
+      "message_id": "<07-profile-text-only@agents.northwind.test>",
+      "references": []
+    },
+    "trust": null
+  }
+}

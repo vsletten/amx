@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evtmail.ai/schema/0.1/error.json",
+  "title": "AMX semantic error",
+  "type": "object",
+  "required": ["@context", "code", "message"],
+  "properties": {
+    "@context": {"type": ["string", "object", "array"]},
+    "@type": {"type": "string"},
+    "code": {"type": "string", "minLength": 1},
+    "message": {"type": "string", "minLength": 1},
+    "retryable": {"type": "boolean"},
+    "details": {}
+  },
+  "additionalProperties": true
+}

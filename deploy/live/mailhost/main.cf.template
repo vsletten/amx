@@ -1,0 +1,92 @@
+# Live Postfix (docs/selfhost-public.md, PLAN §11). envsubst fills ${MX_HOST}, ${AGENT_DOMAIN},
+# ${MAILHOST_IP}, and ${GATEWAY_IP}; Postfix's own $variables are left alone.
+compatibility_level = 3.6
+
+# Identity: HELO, the banner, and the PTR all name the MX host.
+myhostname = ${MX_HOST}
+mydomain = ${AGENT_DOMAIN}
+myorigin = $myhostname
+smtp_helo_name = $myhostname
+smtpd_banner = $myhostname ESMTP
+inet_interfaces = all
+# IPv4 only: the published ports bind 0.0.0.0, and outbound mail must leave from the address the
+# PTR and SPF name.
+inet_protocols = ipv4
+
+# One hosted domain: the agents'. Nothing is local and nothing is relayed for anyone on port 25.
+mydestination = localhost
+local_transport = error:5.1.1 no local delivery on this host
+alias_maps =
+relay_domains =
+virtual_mailbox_domains = ${AGENT_DOMAIN}
+virtual_mailbox_maps = hash:/etc/postfix/vmailbox
+virtual_alias_maps = hash:/etc/postfix/virtual
+virtual_transport = lmtp:unix:private/dovecot-lmtp
+# The agent domain goes to the gateway's LMTP; postmaster@ goes to Dovecot (entrypoint).
+transport_maps = hash:/etc/postfix/transport
+
+# Relay rules. Port 25 trusts no client address: mynetworks is loopback only, and no
+# restriction below permits it. Mail leaves this host only from the :10025 listener, which
+# accepts only the gateway's address (master.cf); the gateway accepts only authenticated,
+# per-agent submissions (587).
+mynetworks = 127.0.0.0/8
+smtpd_helo_required = yes
+disable_vrfy_command = yes
+smtpd_client_restrictions =
+smtpd_helo_restrictions =
+smtpd_sender_restrictions = reject_non_fqdn_sender, reject_unknown_sender_domain
+smtpd_relay_restrictions = reject_unauth_destination
+smtpd_recipient_restrictions = reject_non_fqdn_recipient, reject_unauth_destination
+smtpd_data_restrictions = reject_unauth_pipelining
+# Unknown agents are refused by Postfix itself (550 5.1.1), even while the milter is down.
+smtpd_reject_unlisted_recipient = yes
+recipient_delimiter = +
+allow_percent_hack = no
+swap_bangpath = no
+
+# The gateway's milter on port 25 only (the :10025 listener overrides both).
+smtpd_milters = inet:${GATEWAY_IP}:8890
+non_smtpd_milters =
+milter_default_action = tempfail
+milter_protocol = 6
+milter_connect_timeout = 5s
+milter_command_timeout = 30s
+milter_content_timeout = 60s
+
+# TLS: opportunistic both ways (RFC 3207). The certificate is the MX host's (ACME, or the
+# self-signed CA for local validation).
+smtpd_tls_chain_files = /tls/server-key.pem, /tls/server.pem
+smtpd_tls_security_level = may
+smtpd_tls_loglevel = 1
+smtpd_tls_received_header = yes
+smtpd_tls_session_cache_database = btree:${data_directory}/smtpd_scache
+smtp_tls_security_level = may
+smtp_tls_loglevel = 1
+smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt
+smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
+smtp_dns_support_level = enabled
+
+# Size and abuse limits. Port 25 takes ${MAX_BYTES} bytes (master.cf), the gateway's max_bytes and
+# its submission limit. The global limit, which cleanup applies to every message, leaves room for
+# what signing and a rendered text part add to a submission before it is reinjected on :10025.
+message_size_limit = ${GLOBAL_MAX_BYTES}
+smtpd_recipient_limit = 50
+smtpd_client_connection_count_limit = 20
+smtpd_client_connection_rate_limit = 60
+smtpd_client_message_rate_limit = 60
+smtpd_hard_error_limit = 10
+
+# Retry timers (PLAN §11.3). Between the dev stack's 5 s/30 s and Postfix's 300 s/4000 s/5 d:
+# the first retry within a minute and a backlog drained within 15 minutes of capacity
+# returning, which suits agent turn-taking without hammering a provider that defers a new IP.
+# A day's lifetime rides out an overnight outage, and a failed send reaches its task as
+# `failed` the same day rather than after five.
+queue_run_delay = 60s
+minimal_backoff_time = 60s
+maximal_backoff_time = 900s
+maximal_queue_lifetime = 1d
+bounce_queue_lifetime = 1d
+# Delay notices off: a DSN reaches an agent's task as a state, and "delayed" is not "failed".
+delay_warning_time = 0h
+
+maillog_file = /dev/stdout

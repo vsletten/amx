@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "amx-scheduler": {
+      "command": "uv",
+      "args": ["run", "amx-mcp", "--agent", "scheduler@agents.northwind.test"],
+      "env": {
+        "AMX_IMAP_PASSWORD": "dev-scheduler",
+        "AMX_SUBMIT_TOKEN": "dev-scheduler-token"
+      }
+    }
+  }
+}

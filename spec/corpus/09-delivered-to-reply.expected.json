@@ -1,0 +1,28 @@
+{
+  "result": {
+    "card": null,
+    "idempotency_key": null,
+    "intent": "response",
+    "lane": "human",
+    "payload": null,
+    "protocol": null,
+    "reply_by": null,
+    "report": null,
+    "schema": null,
+    "sender": {
+      "address": "human@forwarder.test",
+      "display_name": null,
+      "dkim_domain": null,
+      "dkim_selector": null
+    },
+    "task": "t_delivered",
+    "task_state": null,
+    "text": "Forwarded confirmation.\n",
+    "thread": {
+      "in_reply_to": null,
+      "message_id": "<delivered-to@forwarder.test>",
+      "references": []
+    },
+    "trust": null
+  }
+}

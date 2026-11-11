@@ -1,0 +1,33 @@
+{
+  "result": {
+    "card": null,
+    "idempotency_key": null,
+    "intent": "error",
+    "lane": "system",
+    "payload": null,
+    "protocol": null,
+    "reply_by": null,
+    "report": {
+      "action": "failed",
+      "diagnostic": "smtp; 550 5.1.1 unknown agent",
+      "recipient": "missing@agents.contoso.test",
+      "status": "5.1.1"
+    },
+    "schema": null,
+    "sender": {
+      "address": "mailer-daemon@contoso.test",
+      "display_name": null,
+      "dkim_domain": null,
+      "dkim_selector": null
+    },
+    "task": "t_dsn",
+    "task_state": "failed",
+    "text": "Delivery failed.",
+    "thread": {
+      "in_reply_to": null,
+      "message_id": "<dsn@contoso.test>",
+      "references": []
+    },
+    "trust": null
+  }
+}

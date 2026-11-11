@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evtmail.ai/schema/0.1/update.json",
+  "title": "AMX task update",
+  "type": "object",
+  "required": ["@context", "status"],
+  "properties": {
+    "@context": {"type": ["string", "object", "array"]},
+    "@type": {"type": "string"},
+    "status": {"type": "string", "minLength": 1},
+    "progress": {"type": "number", "minimum": 0, "maximum": 1},
+    "detail": {"type": "string"}
+  },
+  "additionalProperties": true
+}

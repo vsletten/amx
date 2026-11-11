@@ -1,0 +1,20 @@
+Agent Mail Exchange (amx)
+Copyright 2026 Victor Sletten and contributors
+
+amx's own source is licensed under Apache-2.0 (LICENSE).
+Third-party code retains its own copyright and license notices.
+
+The vendored pymilter in third_party/pymilter is copyright James Niemira,
+Stuart Gathman and its contributors, licensed GPL v2 or later; see its
+COPYING and source headers. AMX's thread-state changes are documented in
+third_party/pymilter/AMX.md.
+
+The gateway imports pymilter in-process. The distributed gateway is a
+GPLv3 combined work (LICENSE.gateway), combining Apache-2.0 amx code with
+pymilter under its GPLv3 option. amx's own source remains Apache-2.0.
+The default client installation does not install pymilter or libmilter.
+
+Stalwart is separate software, not part of the published gateway image.
+Its upstream image includes SEL-only code. Derived init/sync/probe images
+that copy its binary are local builds only and must never be published.
+See docs/licensing.md for the distribution and corresponding-source boundary.

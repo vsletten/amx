@@ -1,0 +1,1 @@
+"""Executable AMX integration scenarios."""

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evtmail.ai/schema/0.1/response.json",
+  "title": "AMX response",
+  "type": "object",
+  "required": ["@context", "result"],
+  "properties": {
+    "@context": {"type": ["string", "object", "array"]},
+    "@type": {"type": "string"},
+    "result": {},
+    "inResponseTo": {"type": "string"}
+  },
+  "additionalProperties": true
+}

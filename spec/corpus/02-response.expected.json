@@ -1,0 +1,35 @@
+{
+  "result": {
+    "card": null,
+    "idempotency_key": null,
+    "intent": "response",
+    "lane": "agent",
+    "payload": {
+      "@context": "https://schema.org",
+      "result": {
+        "condition": "good"
+      }
+    },
+    "protocol": "amx/0.1",
+    "reply_by": null,
+    "report": null,
+    "schema": "https://evtmail.ai/schema/0.1/response.json",
+    "sender": {
+      "address": "scheduler@agents.northwind.test",
+      "display_name": null,
+      "dkim_domain": null,
+      "dkim_selector": null
+    },
+    "task": "t_02_response",
+    "task_state": "completed",
+    "text": "Inspection completed.\n",
+    "thread": {
+      "in_reply_to": "<request-for-02-response@agents.northwind.test>",
+      "message_id": "<02-response@agents.northwind.test>",
+      "references": [
+        "<request-for-02-response@agents.northwind.test>"
+      ]
+    },
+    "trust": null
+  }
+}

@@ -1,0 +1,31 @@
+From: scheduler@agents.northwind.test
+To: intake@agents.contoso.test
+Subject: 03 Update
+Date: Wed, 23 Sep 2026 19:00:00 +0000
+Message-ID: <03-update@agents.northwind.test>
+Auto-Submitted: auto-generated
+Agent-Protocol: amx/0.1
+Agent-Intent: update
+Agent-Task: t_03_update
+Agent-Task-State: working
+Agent-Schema: https://evtmail.ai/schema/0.1/update.json
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="amx-03-update"
+
+--amx-03-update
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Inspection is halfway complete.
+
+--amx-03-update
+Content-Type: application/ld+json
+Content-Transfer-Encoding: base64
+Content-Disposition: inline; filename="payload.json"
+MIME-Version: 1.0
+Content-Purpose: Machine-readable
+
+eyJAY29udGV4dCI6Imh0dHBzOi8vc2NoZW1hLm9yZyIsInByb2dyZXNzIjowLjUsInN0YXR1cyI6
+Im9uIHNpdGUifQ==
+
+--amx-03-update--

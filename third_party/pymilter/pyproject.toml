@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.uv]
+# Rebuild when the sources change, not only when setup.py does.
+cache-keys = [
+  { file = "pyproject.toml" },
+  { file = "setup.py" },
+  { file = "miltermodule.c" },
+  { file = "mime.py" },
+  { file = "Milter/*.py" },
+]

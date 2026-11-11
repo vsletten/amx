@@ -1,0 +1,40 @@
+compatibility_level = 3.6
+myhostname = ${MAIL_HOSTNAME}
+mydomain = ${MAIL_DOMAIN}
+agent_domain = ${AGENT_DOMAIN}
+myorigin = $mydomain
+mydestination = $myhostname, localhost.$mydomain, localhost
+inet_interfaces = all
+inet_protocols = ipv4
+mynetworks = 127.0.0.0/8, 172.30.0.0/24
+smtpd_relay_restrictions = check_recipient_access pcre:/etc/postfix/allowed-recipients.pcre, reject
+smtpd_recipient_restrictions = permit_mynetworks, reject_unauth_destination
+smtpd_reject_unlisted_recipient = no
+recipient_delimiter = +
+# M4: route only on the domain after the last "@" (the gateway's holds and limits judge that one).
+allow_percent_hack = no
+swap_bangpath = no
+
+virtual_mailbox_domains = $mydomain, $agent_domain
+virtual_mailbox_maps = hash:/etc/postfix/vmailbox
+virtual_transport = lmtp:unix:private/dovecot-lmtp
+transport_maps = hash:/etc/postfix/transport
+
+# Only the public smtpd listener uses the gateway. The :10025 listener overrides these.
+smtpd_milters = ${MILTER_ENDPOINT}
+non_smtpd_milters =
+milter_default_action = tempfail
+milter_protocol = 6
+milter_connect_timeout = 5s
+milter_command_timeout = 30s
+milter_content_timeout = 60s
+
+queue_run_delay = 5s
+minimal_backoff_time = 5s
+maximal_backoff_time = 30s
+maximal_queue_lifetime = 30s
+bounce_queue_lifetime = 30s
+smtp_tls_security_level = none
+smtp_dns_support_level = enabled
+disable_dns_lookups = no
+maillog_file = /dev/stdout

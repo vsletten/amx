@@ -1,0 +1,34 @@
+From: intake@agents.contoso.test
+To: scheduler+t_thread@agents.northwind.test
+Subject: 13 Threaded Response
+Date: Wed, 23 Sep 2026 19:00:00 +0000
+Message-ID: <13-threaded-response@agents.northwind.test>
+Auto-Submitted: auto-generated
+Agent-Protocol: amx/0.1
+Agent-Intent: response
+Agent-Task: t_thread
+Agent-Task-State: completed
+Agent-Schema: https://evtmail.ai/schema/0.1/response.json
+In-Reply-To: <thread-request@agents.northwind.test>
+References:
+ <thread-root@agents.northwind.test> <thread-request@agents.northwind.test>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="amx-13-threaded-response"
+
+--amx-13-threaded-response
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Tuesday at nine is confirmed.
+
+--amx-13-threaded-response
+Content-Type: application/ld+json
+Content-Transfer-Encoding: base64
+Content-Disposition: inline; filename="payload.json"
+MIME-Version: 1.0
+Content-Purpose: Machine-readable
+
+eyJAY29udGV4dCI6Imh0dHBzOi8vc2NoZW1hLm9yZyIsInJlc3VsdCI6eyJzbG90IjoiMjAyNi0x
+MC0wNlQwOTowMDowMC0wNzowMCJ9fQ==
+
+--amx-13-threaded-response--

@@ -1,0 +1,178 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  hygiene:
+    name: public hygiene
+    runs-on: ${{ fromJSON(vars.AMX_CI_RUNS_ON || '"ubuntu-24.04"') }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+      - run: uv run --no-project --python 3.13 python tools/hygiene_check.py
+
+  selfhost:
+    name: private selfhost, two agent hosts (SH-26)
+    runs-on: ${{ fromJSON(vars.AMX_CI_RUNS_ON || '"ubuntu-24.04"') }}
+    timeout-minutes: 30
+    env:
+      OMP_NUM_THREADS: "8"
+      OPENBLAS_NUM_THREADS: "8"
+      MKL_NUM_THREADS: "8"
+      GOMAXPROCS: "8"
+      TOKIO_WORKER_THREADS: "8"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install libmilter
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libmilter-dev
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+      - run: uv sync --locked --group gateway
+      # Always a disposable CI engine, never a shared native stack. The same
+      # integrated command runs on every PR and main, without nested locking.
+      - run: nice -n 10 make selfhost-validate 2>&1 | tee selfhost.log
+        shell: bash
+      - uses: actions/upload-artifact@v4
+        if: always()
+        continue-on-error: true
+        with:
+          name: selfhost-validation
+          # No fixture directory, bundles, private mail, or container logs.
+          path: selfhost.log
+
+  unit:
+    name: ruff and unit tests
+    runs-on: ${{ fromJSON(vars.AMX_CI_RUNS_ON || '"ubuntu-24.04"') }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install libmilter (pymilter builds against it)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libmilter-dev
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+      - run: uv sync --locked --group gateway
+      - run: uv run --group gateway ruff check .
+      - run: uv run --group gateway ruff format --check .
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.5"
+          cache: false
+      - name: Read the shared AX pin
+        run: echo "AX_COMMIT=$(cat deploy/ax/AX_COMMIT)" >> "$GITHUB_ENV"
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ax-${{ runner.os }}-${{ env.AX_COMMIT }}
+      - name: Build pinned AX v0.8.1 and interim baseline
+        run: |
+          git init "$RUNNER_TEMP/ax-src"
+          git -C "$RUNNER_TEMP/ax-src" remote add origin https://github.com/summationai/agent-exchange
+          git -C "$RUNNER_TEMP/ax-src" fetch --depth=1 origin "$AX_COMMIT"
+          git -C "$RUNNER_TEMP/ax-src" checkout --detach FETCH_HEAD
+          cd "$RUNNER_TEMP/ax-src"
+          CGO_ENABLED=1 go build -o "$RUNNER_TEMP/ax" ./cmd/ax
+          test "$("$RUNNER_TEMP/ax" version)" = "0.8.1"
+          echo "AX_BINARY=$RUNNER_TEMP/ax" >> "$GITHUB_ENV"
+          git fetch --depth=1 origin 1107669b9610da4c9d630e5f3e80599a12946ef1
+          git checkout --detach FETCH_HEAD
+          CGO_ENABLED=1 go build -o "$RUNNER_TEMP/ax-baseline" ./cmd/ax
+          echo "AX_BASELINE_BINARY=$RUNNER_TEMP/ax-baseline" >> "$GITHUB_ENV"
+      - run: uv run --group gateway pytest tests/unit -q
+
+  scenarios:
+    name: compose scenario suite
+    runs-on: ${{ fromJSON(vars.AMX_CI_RUNS_ON || '"ubuntu-24.04"') }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install libmilter (pymilter builds against it)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libmilter-dev
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+      # S11's LLM scenarios skip themselves here: the runner has no Ollama.
+      - run: uv sync --locked --group gateway
+      # The supervisor emits failure logs before tearing down, under the host lock.
+      - run: make suite MTA_CT=postfix 2>&1 | tee compose.log
+        shell: bash
+      - uses: actions/upload-artifact@v4
+        # Artifact storage is billed; a failed upload must not fail the job.
+        continue-on-error: true
+        if: failure()
+        with:
+          name: compose-logs
+          path: compose.log
+
+  scenarios-stalwart:
+    name: compose scenario suite, contoso on Stalwart (M6)
+    runs-on: ${{ fromJSON(vars.AMX_CI_RUNS_ON || '"ubuntu-24.04"') }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install libmilter (pymilter builds against it)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libmilter-dev
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+      # S11's LLM runs skip (no Ollama here).
+      - run: uv sync --locked --group gateway
+      - run: make suite MTA_CT=stalwart 2>&1 | tee compose.log
+        shell: bash
+      - uses: actions/upload-artifact@v4
+        # Artifact storage is billed; a failed upload must not fail the job.
+        continue-on-error: true
+        if: failure()
+        with:
+          name: compose-logs-stalwart
+          path: compose.log
+
+  live-bundle:
+    name: live bundle, ${{ matrix.mta }}
+    runs-on: ${{ fromJSON(vars.AMX_CI_RUNS_ON || '"ubuntu-24.04"') }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        mta: [postfix, stalwart]
+    env:
+      OMP_NUM_THREADS: "8"
+      OPENBLAS_NUM_THREADS: "8"
+      TOKIO_WORKER_THREADS: "8"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install libmilter
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libmilter-dev
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+      - run: uv sync --locked --group gateway
+      # Disposable engines retain the lease and refusal/cleanup protocol.
+      # Stalwart's fresh validator also replaces certificate files, invokes the
+      # SH-22 hook and checks 993/465/2587 fingerprints plus unchanged PIDs.
+      - run: nice -n 10 make live-validate LIVE_MTA=${{ matrix.mta }} 2>&1 | tee live-bundle.log
+        shell: bash
+      - uses: actions/upload-artifact@v4
+        # Artifact storage is billed; a failed upload must not fail the job.
+        continue-on-error: true
+        if: always()
+        with:
+          name: live-bundle-${{ matrix.mta }}
+          path: live-bundle.log

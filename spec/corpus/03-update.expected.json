@@ -1,0 +1,32 @@
+{
+  "result": {
+    "card": null,
+    "idempotency_key": null,
+    "intent": "update",
+    "lane": "agent",
+    "payload": {
+      "@context": "https://schema.org",
+      "progress": 0.5,
+      "status": "on site"
+    },
+    "protocol": "amx/0.1",
+    "reply_by": null,
+    "report": null,
+    "schema": "https://evtmail.ai/schema/0.1/update.json",
+    "sender": {
+      "address": "scheduler@agents.northwind.test",
+      "display_name": null,
+      "dkim_domain": null,
+      "dkim_selector": null
+    },
+    "task": "t_03_update",
+    "task_state": "working",
+    "text": "Inspection is halfway complete.\n",
+    "thread": {
+      "in_reply_to": null,
+      "message_id": "<03-update@agents.northwind.test>",
+      "references": []
+    },
+    "trust": null
+  }
+}

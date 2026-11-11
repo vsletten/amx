@@ -1,0 +1,318 @@
+name: amx
+
+x-mailhost: &mailhost
+  build:
+    context: .
+    dockerfile: mailhost/Dockerfile
+  restart: unless-stopped
+  dns:
+    - 172.30.0.53
+  depends_on:
+    dns:
+      condition: service_started
+  healthcheck:
+    test: ["CMD-SHELL", "nc -z 127.0.0.1 25 && nc -z 127.0.0.1 143"]
+    interval: 2s
+    timeout: 2s
+    retries: 30
+    start_period: 5s
+  networks:
+    amx: {}
+
+x-gateway: &gateway
+  build:
+    context: ..
+    dockerfile: deploy/gateway/Dockerfile
+  restart: unless-stopped
+  extra_hosts:
+    - "host.docker.internal:host-gateway"  # the host's Ollama (LLM agents) and Laya (judge)
+    # The stack's DNS answers only .test (no mail can reach a real domain). The jev backend's one
+    # outside name is pinned here instead: 127.0.0.1 (fails closed) unless the live run exports
+    # TYPESAFE_API_IP, e.g. $(getent ahostsv4 api.typesafe.ai | awk 'NR==1{print $1}').
+    - "api.typesafe.ai:${TYPESAFE_API_IP:-127.0.0.1}"
+  user: "${AMX_UID:-1000}:${AMX_GID:-1000}"  # the Makefile passes the invoking user's ids
+  dns:
+    - 172.30.0.53
+  healthcheck:
+    test:
+      [
+        "CMD-SHELL",
+        "/app/.venv/bin/python -c \"import socket; socket.create_connection(('127.0.0.1',8890),2).close(); socket.create_connection(('127.0.0.1',2424),2).close(); socket.create_connection(('127.0.0.1',2587),2).close()\"",
+      ]
+    interval: 2s
+    timeout: 3s
+    retries: 30
+    start_period: 5s
+  networks:
+    amx: {}
+
+services:
+  dns:
+    image: coredns/coredns:1.12.4
+    command: -conf /etc/coredns/Corefile
+    restart: unless-stopped
+    volumes:
+      - ./coredns/Corefile:/etc/coredns/Corefile:ro
+      - ./generated/zones:/zones:ro
+    networks:
+      amx:
+        ipv4_address: 172.30.0.53
+
+  mailhost-nw:
+    <<: *mailhost
+    environment:
+      MAIL_DOMAIN: northwind.test
+      MAIL_HOSTNAME: mail.northwind.test
+      AGENT_DOMAIN: agents.northwind.test
+      GATEWAY_HOST: gateway-nw
+      GATEWAY_IP: 172.30.0.11
+      MILTER_ENDPOINT: inet:gateway-nw:8890
+    ports:
+      - "127.0.0.1:2525:25"
+      - "127.0.0.1:11025:10025"
+      - "127.0.0.1:1431:143"
+    volumes:
+      - ./dev-users:/opt/amx/dev-users:ro
+      # PLAN §5.2: agents registered while the stack runs (`amx agent add --live`); the
+      # mailhost's amx-sync-accounts merges this directory's accounts file into Dovecot.
+      - ./generated/state/accounts/nw:/opt/amx/accounts:ro
+      - mail-nw:/var/mail/vhosts
+    networks:
+      amx:
+        ipv4_address: 172.30.0.10
+
+  mailhost-ct:
+    <<: *mailhost
+    environment:
+      MAIL_DOMAIN: contoso.test
+      MAIL_HOSTNAME: mail.contoso.test
+      AGENT_DOMAIN: agents.contoso.test
+      GATEWAY_HOST: gateway-ct
+      GATEWAY_IP: 172.30.0.21
+      MILTER_ENDPOINT: inet:gateway-ct:8890
+    ports:
+      - "127.0.0.1:2526:25"
+      - "127.0.0.1:1432:143"
+    volumes:
+      - ./dev-users:/opt/amx/dev-users:ro
+      - ./generated/state/accounts/ct:/opt/amx/accounts:ro  # PLAN §5.2, as for mailhost-nw
+      - mail-ct:/var/mail/vhosts
+    networks:
+      amx:
+        ipv4_address: 172.30.0.20
+
+  mailhost-pm:
+    <<: *mailhost
+    environment:
+      MAIL_DOMAIN: plainmail.test
+      MAIL_HOSTNAME: mail.plainmail.test
+      AGENT_DOMAIN: agents.plainmail.test
+      GATEWAY_HOST: ""
+      MILTER_ENDPOINT: ""
+    ports:
+      - "127.0.0.1:2527:25"
+      - "127.0.0.1:1433:143"
+    volumes:
+      - ./dev-users:/opt/amx/dev-users:ro
+      - mail-pm:/var/mail/vhosts
+    networks:
+      amx:
+        ipv4_address: 172.30.0.30
+
+  gateway-nw:
+    <<: *gateway
+    command: ["--config", "/etc/amx/gateway.yaml"]
+    environment:
+      AMX_HANDLER_LOG: /data/handler.jsonl
+      # Empty by default (the stub judge). For the one live run, export these on the host:
+      # AMX_CONTENT_JUDGE_BACKEND=jev plus TYPESAFE_API_KEY. Laya on the host: backend laya.
+      AMX_CONTENT_JUDGE_BACKEND: ${AMX_CONTENT_JUDGE_BACKEND:-}
+      AMX_CONTENT_JUDGE_BASE_URL: ${AMX_CONTENT_JUDGE_BASE_URL:-}
+      TYPESAFE_API_KEY: ${TYPESAFE_API_KEY:-}
+      # The LLM agents (S11) call the host's Ollama; a signed-in daemon relays :cloud models, so
+      # no key enters the stack. AMX_LLM_API_KEY is only for an endpoint that needs one.
+      AMX_LLM_BASE_URL: ${AMX_LLM_BASE_URL:-http://host.docker.internal:11434/v1}
+      AMX_LLM_MODEL: ${AMX_LLM_MODEL:-deepseek-v4.1-flash:cloud}
+      AMX_LLM_API_KEY: ${AMX_LLM_API_KEY:-}
+      AMX_LLM_TIMEOUT: ${AMX_LLM_TIMEOUT:-}
+      AMX_LLM_BRIEFS: /etc/amx/llm-briefs.yaml
+    depends_on:
+      dns:
+        condition: service_started
+      mailhost-nw:
+        condition: service_healthy
+    volumes:
+      - ./gateway/northwind.yaml:/etc/amx/gateway.yaml:ro
+      - ./gateway/llm-briefs.yaml:/etc/amx/llm-briefs.yaml:ro
+      - ./generated/state/nw:/data
+      - ./generated/keys:/keys:ro
+      - ./generated/tls/dev-ca.pem:/tls/dev-ca.pem:ro
+      - ./generated/tls/server.pem:/tls/server.pem:ro
+      - ./generated/tls/server-key.pem:/tls/server-key.pem:ro
+    ports:
+      - "127.0.0.1:2587:2587"
+    networks:
+      amx:
+        ipv4_address: 172.30.0.11
+
+  gateway-ct:
+    <<: *gateway
+    command: ["--config", "/etc/amx/gateway.yaml"]
+    environment:
+      AMX_HANDLER_LOG: /data/handler.jsonl
+      # Empty by default (the stub judge). For the one live run, export these on the host:
+      # AMX_CONTENT_JUDGE_BACKEND=jev plus TYPESAFE_API_KEY. Laya on the host: backend laya.
+      AMX_CONTENT_JUDGE_BACKEND: ${AMX_CONTENT_JUDGE_BACKEND:-}
+      AMX_CONTENT_JUDGE_BASE_URL: ${AMX_CONTENT_JUDGE_BASE_URL:-}
+      TYPESAFE_API_KEY: ${TYPESAFE_API_KEY:-}
+      # The LLM agents (S11) call the host's Ollama; a signed-in daemon relays :cloud models, so
+      # no key enters the stack. AMX_LLM_API_KEY is only for an endpoint that needs one.
+      AMX_LLM_BASE_URL: ${AMX_LLM_BASE_URL:-http://host.docker.internal:11434/v1}
+      AMX_LLM_MODEL: ${AMX_LLM_MODEL:-deepseek-v4.1-flash:cloud}
+      AMX_LLM_API_KEY: ${AMX_LLM_API_KEY:-}
+      AMX_LLM_TIMEOUT: ${AMX_LLM_TIMEOUT:-}
+      AMX_LLM_BRIEFS: /etc/amx/llm-briefs.yaml
+    depends_on:
+      dns:
+        condition: service_started
+      mailhost-ct:
+        condition: service_healthy
+    volumes:
+      - ./gateway/contoso.yaml:/etc/amx/gateway.yaml:ro
+      - ./gateway/llm-briefs.yaml:/etc/amx/llm-briefs.yaml:ro
+      - ./generated/state/ct:/data
+      - ./generated/keys:/keys:ro
+      - ./generated/tls/dev-ca.pem:/tls/dev-ca.pem:ro
+      - ./generated/tls/server.pem:/tls/server.pem:ro
+      - ./generated/tls/server-key.pem:/tls/server-key.pem:ro
+    ports:
+      - "127.0.0.1:2588:2587"
+    networks:
+      amx:
+        ipv4_address: 172.30.0.21
+
+  # PLAN §5.9: what a remote agent's host can reach, as through a VPN's egress or a firewall that
+  # passes only the mail ports: IMAP on contoso's mailhost and submission on its gateway. Not the
+  # milter, LMTP, port 25, or the milter-less :10025, which trust the amx network. IMAP goes to the
+  # mailhost's agent-side listener (1143), which accepts no master login. If either forwarder
+  # exits, the container does, and restarts.
+  edge-ct:
+    image: alpine/socat:1.8.0.3@sha256:beb4a68d9e4fe6b0f21ea774a0fde6c31f580dde6368939ed70100c5385b015e
+    init: true  # sh as PID 1 would ignore SIGTERM
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        socat TCP-LISTEN:143,fork,reuseaddr TCP:mailhost-ct:$${EDGE_IMAP_PORT} &
+        socat TCP-LISTEN:2587,fork,reuseaddr TCP:gateway-ct:2587 &
+        wait -n; exit 1
+    environment:
+      EDGE_IMAP_PORT: "1143"
+    restart: unless-stopped
+    depends_on:
+      gateway-ct:
+        condition: service_healthy
+    networks:
+      amx: {}
+      agent-ct: {}
+
+  # PLAN §5.9: outpost@agents.contoso.test is a remote agent, and this is its host. The runner is a
+  # mail client: it connects out, through edge-ct only, to outpost's IMAP INBOX (IDLE) and to
+  # gateway-ct's submission port, with outpost's own password and token and nothing else. It is not
+  # on the amx network, mounts none of the gateway's state, keys, or configuration, and listens on
+  # no port (S18a checks each).
+  runner-ct:
+    build:
+      context: ..
+      dockerfile: deploy/ax/Dockerfile
+      args:
+        AMX_UID: "${AMX_UID:-1000}"
+        AMX_GID: "${AMX_GID:-1000}"
+    entrypoint: ["/app/.venv/bin/amx-runner"]
+    command:
+      - --agent=outpost@agents.contoso.test
+      - --imap=edge-ct:143
+      - --submit=smtp://edge-ct:2587
+      - --ca=/tls/dev-ca.pem
+      - --handler=amx.examples.intake:handle
+      - --state=/state
+      - --ax=${AMX_RUNNER_AX_TARGET-outpost-live}
+      - --ax-home=/state/ax
+    restart: unless-stopped
+    # SIGTERM lets a handler in progress finish its message before the runner exits (§5.9).
+    stop_grace_period: 30s
+    user: "${AMX_UID:-1000}:${AMX_GID:-1000}"
+    environment:
+      AX_HOME: /state/ax
+      AMX_IMAP_PASSWORD: dev-outpost  # DEVELOPMENT ONLY, like deploy/dev-users
+      AMX_SUBMIT_TOKEN: dev-outpost-token
+      AMX_HANDLER_LOG: /state/handler.jsonl
+    depends_on:
+      edge-ct:
+        condition: service_started
+    volumes:
+      - runner-state:/state
+      - ./generated/tls/dev-ca.pem:/tls/dev-ca.pem:ro
+    networks:
+      agent-ct: {}
+
+  roundcube:
+    image: roundcube/roundcubemail:1.6.11-apache
+    restart: unless-stopped
+    depends_on:
+      mailhost-nw:
+        condition: service_healthy
+      mailhost-ct:
+        condition: service_healthy
+      mailhost-pm:
+        condition: service_healthy
+    ports:
+      # 8091, not 8081: on the development workstation 8081 is taken, and a stack started without
+      # ROUNDCUBE_PORT left Roundcube stuck in "Created" while everything else came up.
+      - "127.0.0.1:${ROUNDCUBE_PORT:-8091}:80"
+    volumes:
+      - ./roundcube/config.inc.php:/var/roundcube/config/config.inc.php:ro
+      - ./roundcube/plugins/amx_folder_drawer:/var/www/html/plugins/amx_folder_drawer:ro
+      - roundcube-db:/var/roundcube/db
+    networks:
+      amx:
+        ipv4_address: 172.30.0.40
+
+  smoke:
+    build:
+      context: .
+      dockerfile: smoke/Dockerfile
+    profiles: ["test"]
+    working_dir: /work
+    command: pytest tests/integration/test_smoke.py -m integration -q -s -p no:cacheprovider
+    dns:
+      - 172.30.0.53
+    depends_on:
+      gateway-nw:
+        condition: service_healthy
+      gateway-ct:
+        condition: service_healthy
+      mailhost-pm:
+        condition: service_healthy
+    volumes:
+      - ..:/work:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      amx: {}
+
+networks:
+  amx:
+    name: amx
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+  # The remote agent's side (§5.9): only runner-ct and edge-ct, and no route out.
+  agent-ct:
+    name: amx-agent-ct
+    internal: true
+
+volumes:
+  runner-state:
+  mail-nw:
+  mail-ct:
+  mail-pm:
+  roundcube-db:

@@ -1,0 +1,26 @@
+# SH-10 starter, intentionally opt-in: legacy parameters still default to Postfix/public.
+# Generated passwords, tokens and keys go into state_dir, never this file.
+mta: stalwart
+profile: private
+# SH-00 measured home.arpa; org_domain also determines agents.<domain> and mail.<domain>.
+org_domain: home.arpa
+state_dir: ~/amx-live/private
+# Loopback is the safe starting bind. Set to your LAN/tailnet IPv4 for remote clients.
+network:
+  bind_address: 127.0.0.1
+  ports: {smtp: 25, submission: 587, imaps: 993, webmail: 8088}
+tls:
+  mode: self-signed
+  # For operator-managed renewal, instead select mode: files and set:
+  # certificate: /operator/certs/fullchain.pem
+  # private_key: /operator/certs/privkey.pem
+  # ca_file: /operator/certs/ca.pem  # optional private CA; omit for system trust
+  # Renewal deploy hook: amx live certs --params /absolute/path/to/live.yaml
+webmail: false
+stalwart:
+  # Independent of mail-client binding: HTTP (admin/account/discovery) is local
+  # by default, even if network.bind_address publishes mail on a public address.
+  admin_bind_address: 127.0.0.1  # or this host's 100.64.0.0/10 tailnet IPv4
+  # Omit for first-start HTTPS download from Stalwart's GitHub WebUI release.
+  # For no-egress runtime, download webui.zip out of band and set this path:
+  # webui_bundle: /operator/staged/webui.zip

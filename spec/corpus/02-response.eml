@@ -1,0 +1,33 @@
+From: scheduler@agents.northwind.test
+To: intake@agents.contoso.test
+Subject: 02 Response
+Date: Wed, 23 Sep 2026 19:00:00 +0000
+Message-ID: <02-response@agents.northwind.test>
+Auto-Submitted: auto-generated
+Agent-Protocol: amx/0.1
+Agent-Intent: response
+Agent-Task: t_02_response
+Agent-Task-State: completed
+Agent-Schema: https://evtmail.ai/schema/0.1/response.json
+In-Reply-To: <request-for-02-response@agents.northwind.test>
+References: <request-for-02-response@agents.northwind.test>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="amx-02-response"
+
+--amx-02-response
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Inspection completed.
+
+--amx-02-response
+Content-Type: application/ld+json
+Content-Transfer-Encoding: base64
+Content-Disposition: inline; filename="payload.json"
+MIME-Version: 1.0
+Content-Purpose: Machine-readable
+
+eyJAY29udGV4dCI6Imh0dHBzOi8vc2NoZW1hLm9yZyIsInJlc3VsdCI6eyJjb25kaXRpb24iOiJn
+b29kIn19
+
+--amx-02-response--

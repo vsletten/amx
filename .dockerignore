@@ -1,0 +1,12 @@
+.git
+.venv
+.pytest_cache
+.ruff_cache
+**/__pycache__
+deploy/generated
+# A host `uv sync` leaves pymilter's build here; the image must compile its own (a newer host .so
+# would make setuptools skip the build).
+**/build
+**/*.egg-info
+deploy/live/live.yaml
+deploy/live/state

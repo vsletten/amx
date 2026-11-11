@@ -1,0 +1,139 @@
+# M6: contoso's mailhost on Stalwart Community instead of Postfix + Dovecot (PLAN §5.8).
+#   make up MTA_CT=stalwart      (the Makefile adds this file after compose.yaml)
+# northwind and plainmail stay on Postfix, so every contoso scenario crosses the two MTAs. The
+# gateway is unchanged: the same milter and LMTP adapters, plus environment variables for
+# Stalwart's master-login syntax and for where the hold queues live. `make down` removes this
+# stack's volumes too.
+services:
+  # SH-00 instrumentation only: a fresh private datastore, no network or host
+  # ports. Explicit run under make suite, never part of normal up or a published image.
+  stalwart-probe:
+    build:
+      context: ..
+      dockerfile: deploy/stalwart/Dockerfile
+      target: probe
+    profiles: ["sh00"]
+    network_mode: none
+    entrypoint: ["python", "/opt/amx/stalwart_probe.py", "--suite-owned"]
+    environment:
+      STALWART_RECOVERY_ADMIN: admin:dev-admin
+      STALWART_HOSTNAME: mail.contoso.test
+      AMX_SH00_PROBE: suite-owned
+    volumes:
+      - ./generated/tls/server.pem:/tls/server.pem:ro
+      - ./generated/tls/server-key.pem:/tls/server-key.pem:ro
+      - ./generated/tls/dev-ca.pem:/tls/dev-ca.pem:ro
+      - ./generated/state/sh00:/fixture:ro
+
+  # One-shot: writes Stalwart's settings, accounts, and folders into the mailhost's volume by
+  # running the pinned binary privately, with no network (amx.adapters.stalwart provision).
+  stalwart-init-ct:
+    build:
+      context: ..
+      dockerfile: deploy/stalwart/Dockerfile
+      target: provisioner
+    network_mode: none
+    environment:
+      STALWART_RECOVERY_ADMIN: admin:dev-admin  # DEVELOPMENT ONLY, like deploy/dev-users
+    command:
+      - --domain=contoso.test
+      - --agent-domain=agents.contoso.test
+      - --hostname=mail.contoso.test
+      - --gateway-host=gateway-ct
+      - --gateway-ip=172.30.0.21
+      - --dev-users=/opt/amx/dev-users
+      # The hold queues: gateway-ct's AMX_MAILBOX_HOLD_OWNER and AMX_MAILBOX_HOLD_PREFIX.
+      - --people-milter-port=8892
+      - --hold-owner=holds@contoso.test
+      - --hold-prefix=Holds/{agent}/
+    volumes:
+      - ./stalwart/config.json:/etc/stalwart/config.json:ro
+      - ./dev-users:/opt/amx/dev-users:ro
+      - stalwart-ct:/var/lib/stalwart
+      - ./generated/tls/server.pem:/tls/server.pem:ro
+      - ./generated/tls/server-key.pem:/tls/server-key.pem:ro
+
+  # PLAN §5.2: agents registered while the stack runs (`amx agent add --live`) are lines in the
+  # accounts file; this applies each change to the running mailhost through its management port
+  # (upsert, disable, destroy) and gives a new agent its hold queue, as the init container does.
+  stalwart-sync-ct:
+    build:
+      context: ..
+      dockerfile: deploy/stalwart/Dockerfile
+      target: provisioner
+    entrypoint: ["python", "/opt/amx/stalwart.py", "sync"]
+    command:
+      - --domain=contoso.test
+      - --agent-domain=agents.contoso.test
+      - --hostname=mail.contoso.test
+      - --gateway-host=gateway-ct
+      - --gateway-ip=172.30.0.21
+      - --dev-users=/opt/amx/dev-users
+      - --hold-owner=holds@contoso.test
+      - --hold-prefix=Holds/{agent}/
+      - --accounts=/opt/amx/accounts/agents.passwd
+      - --url=http://mailhost-ct:8080
+      - --imap-host=mailhost-ct
+      - --watch
+    restart: unless-stopped
+    # The invoking user, to read the 0600 accounts file the CLI writes on the host.
+    user: "${AMX_UID:-1000}:${AMX_GID:-1000}"
+    environment:
+      STALWART_RECOVERY_ADMIN: admin:dev-admin  # DEVELOPMENT ONLY, like deploy/dev-users
+    depends_on:
+      mailhost-ct:
+        condition: service_healthy
+    volumes:
+      - ./dev-users:/opt/amx/dev-users:ro
+      - ./generated/state/accounts/ct:/opt/amx/accounts:ro
+    networks:
+      amx: {}
+
+  mailhost-ct:
+    image: stalwartlabs/stalwart:v0.16.25@sha256:74e5a7d55303ba525d939c6bf97ed4e010df7521f52d80afc22a815b66bd53f3
+    ports:
+      - "127.0.0.1:1465:465"
+      - "127.0.0.1:1587:587"
+    build: !reset null
+    environment: !override
+      # The management login (port 8080, not published); not a mail user.
+      STALWART_RECOVERY_ADMIN: admin:dev-admin
+      STALWART_HOSTNAME: mail.contoso.test
+    volumes: !override
+      - ./stalwart/config.json:/etc/stalwart/config.json:ro
+      - stalwart-ct:/var/lib/stalwart
+      - ./generated/tls/server.pem:/tls/server.pem:ro
+      - ./generated/tls/server-key.pem:/tls/server-key.pem:ro
+    depends_on:
+      stalwart-init-ct:
+        condition: service_completed_successfully
+    healthcheck:
+      # The Postfix mailhost's check (SMTP and IMAP accept connections); the image has no nc.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/25 && exec 4<>/dev/tcp/127.0.0.1/143"]
+
+  gateway-ct:
+    environment:
+      AMX_PEOPLE_DOMAIN: contoso.test
+      AMX_PEOPLE_MILTER_PORT: "8892"
+      AMX_SIBLING_PORT: "10027"
+      AMX_SIBLING_MILTER_PORT: "8891"
+      # Stalwart's master login is user%master@domain; Dovecot's is user*master.
+      AMX_MAILBOX_MASTER_LOGIN: "{user}%{master}@contoso.test"
+      # A Stalwart owner has every right on its own folders, so the hold queues cannot be in the
+      # agents' own mailboxes: they are in holds@'s, shared read-only to each agent and
+      # read-write to approver@contoso.test (PLAN §5.8).
+      AMX_MAILBOX_HOLD_OWNER: holds@contoso.test
+      AMX_MAILBOX_HOLD_PREFIX: "Holds/{agent}/"
+    networks:
+      amx:
+        # Stalwart resolves its milter's host once, at startup, and runs without the milter if
+        # that fails; it boots before the gateway exists, so the milter address is this fixed IP.
+        ipv4_address: 172.30.0.21
+
+  # Stalwart has no IMAP listener without master logins, so edge-ct forwards to 143 (PLAN §8).
+  edge-ct:
+    environment:
+      EDGE_IMAP_PORT: "143"
+
+volumes:
+  stalwart-ct:

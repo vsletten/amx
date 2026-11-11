@@ -1,0 +1,37 @@
+name: Bug report
+description: Report a reproducible, non-security defect.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For vulnerabilities, read SECURITY.md at this repository's root and use
+        Security → Report a vulnerability, not this public form.
+        Do not include credentials, submission tokens, private mail, or generated state.
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Include the release or full commit, Python version, OS, and MTA if applicable.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Give a minimal synthetic example and any relevant sanitized configuration.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include sanitized errors or logs, without secrets or private mail.
+    validations:
+      required: true

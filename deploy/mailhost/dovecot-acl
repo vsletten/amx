@@ -1,0 +1,29 @@
+# Global Dovecot ACLs (acl_globals_only: users cannot add their own with SETACL).
+#
+# The hold queue is approved by moving a message out of Outbox/Held. An agent's own login may
+# read its Outbox folders and mark messages read, but may not approve, reject, forge, flag,
+# create, rename, delete, or re-permission anything there; only the approver login (a master
+# user the agent never holds) and the gateway may. Negative "-owner" rights override the owner's
+# default full rights. Without "w" the agent cannot set the $AmxDone keyword that tells holdwatch
+# a message is done; without "k" on Outbox it cannot create or rename a folder into Outbox/*. The
+# mailhost entrypoint pre-creates all four folders, so none can be created by renaming onto a
+# name that does not exist yet. PLAN §8, the M4 self-approval item.
+* owner lrwstipekxa
+* user=gateway lrwstipekxa
+Outbox -owner xak
+Outbox/Held -owner ipetkxaw
+Outbox/Approved -owner ipetkxaw
+Outbox/Rejected -owner ipetkxaw
+# The approver may read INBOX and Sent (not mark them read: that would hide mail from an MCP
+# client's wait_for_reply) and move messages out of Held into Approved or Rejected. It is one
+# login for every mailbox on this mailhost, people's included (PLAN §8).
+INBOX user=approver lr
+Sent user=approver lr
+Outbox user=approver l
+Outbox/Held user=approver lrwste
+Outbox/Approved user=approver lrwsi
+Outbox/Rejected user=approver lrwsi
+# PLAN §5.9: a remote agent's runner acts on what is in its INBOX, trusting the gateway's verdict
+# headers there. So no agent login may insert into its own INBOX (APPEND, COPY, MOVE): the mailhost
+# entrypoint appends "INBOX -user=<agent address> ip" for every agent in the agent domain. The
+# gateway files as a master user, checked as user=gateway, so it still can.

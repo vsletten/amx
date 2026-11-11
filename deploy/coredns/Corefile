@@ -1,0 +1,30 @@
+northwind.test:53 {
+    errors
+    log
+    file /zones/northwind.test.zone { reload 2s }
+}
+agents.northwind.test:53 {
+    errors
+    log
+    file /zones/agents.northwind.test.zone { reload 2s }
+}
+contoso.test:53 {
+    errors
+    log
+    file /zones/contoso.test.zone { reload 2s }
+}
+agents.contoso.test:53 {
+    errors
+    log
+    file /zones/agents.contoso.test.zone { reload 2s }
+}
+plainmail.test:53 {
+    errors
+    log
+    file /zones/plainmail.test.zone { reload 2s }
+}
+dead.test:53 {
+    errors
+    log
+    file /zones/dead.test.zone { reload 2s }
+}

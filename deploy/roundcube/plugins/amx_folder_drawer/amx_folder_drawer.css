@@ -1,0 +1,43 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Active only while the script has set .amx-drawer (Elastic's normal band, 769-1200 px, mail
+ * view). Elastic forces `flex: 3 !important; width: auto !important` on both panels below
+ * 1200 px and hides one of them with `.hidden { display: none !important }`, so every rule here
+ * uses two ids plus !important to take precedence.
+ */
+html.amx-drawer #layout #layout-sidebar {
+    display: flex !important;
+    flex: 0 0 240px !important;
+    width: 240px !important;
+    min-width: 0 !important;
+    max-width: 240px !important;
+    overflow: hidden;
+    transition: flex-basis 0.2s ease, width 0.2s ease, max-width 0.2s ease;
+}
+
+/* Keep the folder tree at full width while the drawer slides, so names never wrap or clip. */
+html.amx-drawer #layout #layout-sidebar > * {
+    width: 240px;
+    min-width: 240px;
+}
+
+html.amx-drawer:not(.amx-drawer-open) #layout #layout-sidebar {
+    flex-basis: 0 !important;
+    width: 0 !important;
+    max-width: 0 !important;
+    border-right-width: 0 !important;
+}
+
+/* The message list stays beside the drawer instead of being replaced by it. */
+html.amx-drawer #layout #layout-list {
+    display: flex !important;
+}
+
+/* The drawer has its own toggle (Folders in the list header); Elastic's back arrow would hide it. */
+html.amx-drawer #layout #layout-sidebar a.back-list-button {
+    display: none !important;
+}
+
+html.amx-drawer-open #layout #layout-list a.back-sidebar-button.folders {
+    color: #37beff;
+}

@@ -1,0 +1,33 @@
+{
+  "result": {
+    "card": null,
+    "idempotency_key": null,
+    "intent": "event",
+    "lane": "agent",
+    "payload": {
+      "@context": "https://schema.org",
+      "command": "pause",
+      "reason": "maintenance",
+      "until": "2026-09-23T19:30:00Z"
+    },
+    "protocol": "amx/0.1",
+    "reply_by": null,
+    "report": null,
+    "schema": "https://evtmail.ai/schema/0.1/control.json",
+    "sender": {
+      "address": "outpost@agents.contoso.test",
+      "display_name": null,
+      "dkim_domain": null,
+      "dkim_selector": null
+    },
+    "task": "t_control_pause",
+    "task_state": "completed",
+    "text": "A control declaration for this agent's gateway: pause.\n",
+    "thread": {
+      "in_reply_to": null,
+      "message_id": "<20-control-pause@agents.northwind.test>",
+      "references": []
+    },
+    "trust": null
+  }
+}

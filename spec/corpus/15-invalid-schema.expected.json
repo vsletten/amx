@@ -1,0 +1,6 @@
+{
+  "error": {
+    "contains": "action",
+    "type": "SchemaValidationError"
+  }
+}

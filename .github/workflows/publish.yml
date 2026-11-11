@@ -1,0 +1,92 @@
+# Enable only after registering a PyPI pending trusted publisher for
+# project agent-mail-exchange, owner vsletten, repository amx,
+# workflow publish.yml, environment pypi. Tags never trigger this workflow.
+# Before registration, protect main with required PRs/checks and configure the
+# pypi environment's deployment branch policy to allow ONLY branch main, no tags.
+# This external environment restriction is essential: workflow checks alone
+# cannot constrain a writer who dispatches a modified branch's workflow.
+# Dispatch from main; the requested tag must still name current main.
+name: publish Python distribution
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to publish (for example v0.3.0)
+        required: true
+        type: string
+
+env:
+  AMX_RELEASE_TAG: ${{ inputs.tag }}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      checks: read
+      pull-requests: read
+    outputs:
+      artifact-id: ${{ steps.distributions.outputs.artifact-id }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Verify requested tag, main custody and merged PR exact-head checks
+        timeout-minutes: 3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 tools/release_preflight.py
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
+        with:
+          python-version: "3.13"
+      - run: uv build
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        id: distributions
+        with:
+          name: distributions-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: pypi
+    permissions:
+      contents: read
+      checks: read
+      pull-requests: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      # No backend, dependency resolver or artifact code executes in this job.
+      # The immutable ID comes only from this workflow run's build job.
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact-id }}
+          path: dist/
+          merge-multiple: true
+      # Recheck all original event/tag/main/PR/CI evidence after download.
+      # GitHub and PyPI have no atomic transaction: a post-check race remains.
+      - name: Recheck release authority immediately before publishing
+        timeout-minutes: 3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 tools/release_preflight.py
+      # PyPI rejects immutable versions already uploaded; never skip duplicates.
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # release/v1

@@ -1,0 +1,5 @@
+# Private profile: replace, do not merge, the public mailhost publications.
+services:
+  mailhost:
+    ports: !override
+      - "${BIND_ADDRESS:?}:${IMAPS_PORT:?}:993"
