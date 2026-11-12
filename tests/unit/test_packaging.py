@@ -15,6 +15,10 @@ from amx.custody import Custody
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def _numeric_version(version: str) -> tuple[int, ...]:
+    return tuple(int(part) for part in version.split("."))
+
+
 def _runner_image_contract():
     runner = yaml.safe_load((ROOT / "deploy/compose.yaml").read_text())["services"]["runner-ct"]
     dockerfile = (ROOT / runner["build"]["dockerfile"]).read_text()
@@ -144,6 +148,13 @@ def test_client_install_includes_mcp_but_not_native_milter():
     assert manifest["tool"]["uv"]["sources"]["pymilter"] == {"path": "third_party/pymilter"}
     assert {"amx", "amx-runner", "amx-mcp", "amx-gateway"} <= project["scripts"].keys()
     assert project["license"] == {"file": "LICENSE"}
+
+
+def test_runtime_lock_stays_above_security_floors():
+    lock = tomllib.loads((ROOT / "uv.lock").read_text())
+    versions = {package["name"]: package["version"] for package in lock["package"]}
+    assert _numeric_version(versions["certifi"]) >= (2026, 10, 18)
+    assert _numeric_version(versions["dnspython"]) >= (2, 9, 0)
 
 
 def test_gateway_and_ci_explicitly_install_native_group():
