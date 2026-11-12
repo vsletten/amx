@@ -15,6 +15,10 @@ from amx.custody import Custody
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def _numeric_version(version: str) -> tuple[int, ...]:
+    return tuple(int(part) for part in version.split("."))
+
+
 def _runner_image_contract():
     runner = yaml.safe_load((ROOT / "deploy/compose.yaml").read_text())["services"]["runner-ct"]
     dockerfile = (ROOT / runner["build"]["dockerfile"]).read_text()
@@ -144,6 +148,26 @@ def test_client_install_includes_mcp_but_not_native_milter():
     assert manifest["tool"]["uv"]["sources"]["pymilter"] == {"path": "third_party/pymilter"}
     assert {"amx", "amx-runner", "amx-mcp", "amx-gateway"} <= project["scripts"].keys()
     assert project["license"] == {"file": "LICENSE"}
+
+
+def test_runtime_lock_stays_above_security_floors():
+    lock = tomllib.loads((ROOT / "uv.lock").read_text())
+    floors = {"certifi": (2026, 10, 18), "dnspython": (2, 9, 0)}
+    for name, floor in floors.items():
+        versions = [package["version"] for package in lock["package"] if package["name"] == name]
+        assert versions
+        assert all(_numeric_version(version) >= floor for version in versions)
+
+
+def test_published_and_probe_dependencies_stay_above_security_floors():
+    manifest = tomllib.loads((ROOT / "pyproject.toml").read_text())
+    dependencies = manifest["project"]["dependencies"]
+    assert "certifi>=2026.10.18" in dependencies
+    assert "dnspython>=2.9,<3" in dependencies
+
+    stalwart = (ROOT / "deploy/stalwart/Dockerfile").read_text()
+    assert "dnspython==2.9.2" in stalwart
+    assert "dnspython==2.8.0" not in stalwart
 
 
 def test_gateway_and_ci_explicitly_install_native_group():

@@ -50,5 +50,5 @@ ENTRYPOINT ["python", "/opt/amx/stalwart.py", "provision"]
 # and sync services target provisioner and remain standard-library-only.
 FROM provisioner AS probe
 USER root
-RUN pip install --no-cache-dir dkimpy==1.1.8 dnspython==2.8.0
+RUN pip install --no-cache-dir dkimpy==1.1.8 dnspython==2.9.2
 USER 2000:2000
