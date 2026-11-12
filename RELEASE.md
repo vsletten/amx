@@ -38,9 +38,11 @@ amx-mcp --help
 ```
 
 Server deployment uses the checkout and its Compose files as documented in the
-quickstarts. Gateway container releases use the immutable image reference
-`ghcr.io/vsletten/amx-gateway:v0.3.0-<full-commit-sha>`; use the exact reference and
-digest in the GitHub release rather than assuming a floating image tag exists.
+quickstarts. Gateway container releases use the commit-suffixed image tag
+`ghcr.io/vsletten/amx-gateway:v0.3.0-<full-commit-sha>`. Tags remain mutable if a
+workflow is rerun: consumers must pin `ghcr.io/vsletten/amx-gateway@sha256:<digest>`
+using the exact digest in the GitHub release, rather than relying on the tag alone.
+No floating version-only image tag is implied.
 
 **PyPI publication will follow in a later release.** No Python package-index
 upload is part of v0.3.0; the Python publisher is manual-only and requires its
