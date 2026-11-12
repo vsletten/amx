@@ -152,9 +152,22 @@ def test_client_install_includes_mcp_but_not_native_milter():
 
 def test_runtime_lock_stays_above_security_floors():
     lock = tomllib.loads((ROOT / "uv.lock").read_text())
-    versions = {package["name"]: package["version"] for package in lock["package"]}
-    assert _numeric_version(versions["certifi"]) >= (2026, 10, 18)
-    assert _numeric_version(versions["dnspython"]) >= (2, 9, 0)
+    floors = {"certifi": (2026, 10, 18), "dnspython": (2, 9, 0)}
+    for name, floor in floors.items():
+        versions = [package["version"] for package in lock["package"] if package["name"] == name]
+        assert versions
+        assert all(_numeric_version(version) >= floor for version in versions)
+
+
+def test_published_and_probe_dependencies_stay_above_security_floors():
+    manifest = tomllib.loads((ROOT / "pyproject.toml").read_text())
+    dependencies = manifest["project"]["dependencies"]
+    assert "certifi>=2026.10.18" in dependencies
+    assert "dnspython>=2.9,<3" in dependencies
+
+    stalwart = (ROOT / "deploy/stalwart/Dockerfile").read_text()
+    assert "dnspython==2.9.2" in stalwart
+    assert "dnspython==2.8.0" not in stalwart
 
 
 def test_gateway_and_ci_explicitly_install_native_group():

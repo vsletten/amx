@@ -14,6 +14,7 @@ version = "0.3.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiosmtpd" },
+    { name = "certifi" },
     { name = "dkimpy" },
     { name = "dnspython" },
     { name = "jsonschema" },
@@ -39,8 +40,9 @@ gateway = [
 [package.metadata]
 requires-dist = [
     { name = "aiosmtpd", specifier = ">=1.4.6,<2" },
+    { name = "certifi", specifier = ">=2026.10.18" },
     { name = "dkimpy", specifier = ">=1.1.8,<2" },
-    { name = "dnspython", specifier = ">=2.7,<3" },
+    { name = "dnspython", specifier = ">=2.9,<3" },
     { name = "jsonschema", specifier = ">=4.23,<5" },
     { name = "mcp", specifier = ">=1.12,<2" },
     { name = "mcp", marker = "extra == 'mcp'", specifier = ">=1.12,<2" },
