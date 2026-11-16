@@ -68,12 +68,12 @@
 <div class="region-label" style="left:60px; top:104px;">Your organization · agents.example.com · one docker compose file</div>
 
 <div class="dns" style="left:60px; top:130px; width:920px;">
-  <b>DNS you already own:</b> MX &nbsp;·&nbsp; SPF &nbsp;·&nbsp; DMARC p=reject &nbsp;·&nbsp; <b>one DKIM key per agent</b> (revoke an agent = delete one record) &nbsp;·&nbsp; agent card pointer
+  <b>DNS you already own:</b> MX &nbsp;·&nbsp; SPF &nbsp;·&nbsp; DMARC p=reject &nbsp;·&nbsp; <b>one DKIM key for the agent domain</b> (adding an agent changes no DNS) &nbsp;·&nbsp; agent card pointer
 </div>
 
 <div class="box mta" style="left:60px; top:190px; width:920px; height:78px;">
   <div class="t">Unmodified mail server <span class="tag" style="background:#dfe5eb; color:#4a5560;">off the shelf</span></div>
-  <div class="d">Postfix + Dovecot today, Stalwart next. Accepts and sends SMTP, queues and retries for days, keeps mailboxes people can open over IMAP. <b>Nothing in it is patched.</b></div>
+  <div class="d">Postfix + Dovecot or Stalwart. Accepts and sends SMTP, queues and retries for days, keeps mailboxes people can open over IMAP. <b style="white-space:nowrap;">Nothing in it is patched.</b></div>
 </div>
 
 <div class="box gw" style="left:60px; top:300px; width:920px; height:284px;">
@@ -84,7 +84,7 @@
     <div class="h">Ingress · policy</div>
     <div class="s">at the SMTP transaction (milter)</div>
     <ul>
-      <li>Verify the sender's <b>per-agent</b> signature</li>
+      <li>Verify the <b>agent's</b> signature</li>
       <li>Validate the JSON part against its schema</li>
       <li>Agent busy → <b>450 try later</b>; the sender's server retries by itself</li>
       <li>Bad message → <b>550 + reason</b>; never stored</li>
@@ -105,7 +105,7 @@
     <div class="h">Outbound · hold queue</div>
     <div class="s">authenticated submission</div>
     <ul>
-      <li>Signs with the agent's own key; per-agent rate limits</li>
+      <li>Signs with the domain's key; per-agent rate limits</li>
       <li>Hold rules (commits money, new domain, tainted input) file the mail in <b>Outbox/Held</b></li>
       <li>A person approves it from any mail client; only then is it signed and sent</li>
     </ul>
@@ -165,7 +165,7 @@
 <div class="msg" style="left:40px; top:770px; width:1520px; height:90px;">
   <div class="t"><span class="num">1</span>Every message is an ordinary email <span style="font-weight:normal; color:var(--muted)">— the profile is a way of writing RFC 5322, not a new format</span></div>
   <div style="margin-top:8px;">
-    <span class="part"><b>Headers</b><code>Agent-Intent: request</code> <code>Agent-Task: t_8f3a2c</code> <code>Agent-Schema: appointment-request.json</code> <code>DKIM-Signature: s=scheduler</code></span>
+    <span class="part"><b>Headers</b><code>Agent-Intent: request</code> <code>Agent-Task: t_8f3a2c</code> <code>Agent-Schema: appointment-request.json</code> <code>DKIM-Signature: s=amx.2026-10</code></span>
     <span class="part"><b>text/plain · required</b>the message, written for a person</span>
     <span class="part"><b>application/ld+json · optional</b>the same content for a machine (IETF Structured Email)</span>
   </div>
@@ -206,6 +206,6 @@
   </g>
 </svg>
 
-<div class="foot">Prototype: Python gateway on Postfix + Dovecot, exercised by an end-to-end scenario suite (S01–S17) across three .test domains. Open source, Apache-2.0.</div>
+<div class="foot">Prototype: Python gateway on Postfix + Dovecot or Stalwart, exercised by an end-to-end scenario suite (S01–S27) across three .test domains. Open source: Apache-2.0 (gateway image GPLv3).</div>
 </body>
 </html>
